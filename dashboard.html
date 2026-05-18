@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - Apex Remote Services</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --primary: #1363C6;
+      --secondary: #15ACE1;
+      --light: #F4F7FE;
+      --dark: #14183E;
+      --sidebar-w: 260px;
+      --navbar-h: 68px;
+      --card-radius: 16px;
+      --transition: 0.28s cubic-bezier(.4,0,.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--light);
+      color: var(--dark);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── NAVBAR ── */
+    .apex-navbar {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: var(--navbar-h);
+      background: #fff;
+      border-bottom: 1px solid rgba(19,99,198,.10);
+      display: flex;
+      align-items: center;
+      padding: 0 24px;
+      z-index: 200;
+      gap: 16px;
+      box-shadow: 0 2px 16px rgba(19,99,198,.06);
+    }
+
+    .sidebar-toggle {
+      width: 40px; height: 40px;
+      background: var(--light);
+      border: none; border-radius: 10px;
+      cursor: pointer;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 5px;
+      transition: background var(--transition);
+      flex-shrink: 0;
+    }
+    .sidebar-toggle:hover { background: rgba(19,99,198,.12); }
+    .sidebar-toggle span {
+      display: block;
+      width: 18px; height: 2px;
+      background: var(--dark);
+      border-radius: 2px;
+      transition: var(--transition);
+    }
+
+    .navbar-greeting {
+      flex: 1;
+      font-family: 'Sora', sans-serif;
+    }
+    .navbar-greeting .time-greet {
+      font-size: 0.78rem;
+      color: var(--secondary);
+      font-weight: 500;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .navbar-greeting .user-greet {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--dark);
+      line-height: 1.2;
+    }
+
+    .navbar-brand-end {
+      font-family: 'Sora', sans-serif;
+      font-weight: 700;
+      font-size: 1.18rem;
+      color: var(--primary);
+      letter-spacing: -.01em;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .navbar-brand-end .brand-dot {
+      width: 8px; height: 8px;
+      background: var(--secondary);
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    /* ── SIDEBAR ── */
+    .apex-sidebar {
+      position: fixed;
+      top: var(--navbar-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--navbar-h));
+      background: var(--dark);
+      display: flex;
+      flex-direction: column;
+      padding: 32px 16px 24px;
+      z-index: 150;
+      transition: transform var(--transition);
+      overflow-y: auto;
+    }
+    .apex-sidebar.collapsed {
+      transform: translateX(calc(-1 * var(--sidebar-w)));
+    }
+
+    .sidebar-label {
+      font-size: 0.68rem;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,.35);
+      margin-bottom: 10px;
+      padding-left: 12px;
+    }
+
+    .sidebar-nav { list-style: none; display: flex; flex-direction: column; gap: 4px; }
+
+    .sidebar-nav li a {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 14px;
+      border-radius: 12px;
+      text-decoration: none;
+      color: rgba(255,255,255,.65);
+      font-size: 0.92rem;
+      font-weight: 500;
+      transition: background var(--transition), color var(--transition);
+    }
+    .sidebar-nav li a:hover {
+      background: rgba(255,255,255,.08);
+      color: #fff;
+    }
+    .sidebar-nav li a.active {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      box-shadow: 0 4px 16px rgba(19,99,198,.35);
+    }
+    .sidebar-nav li a .nav-icon {
+      width: 22px; height: 22px;
+      flex-shrink: 0;
+      opacity: .8;
+    }
+    .sidebar-nav li a.active .nav-icon { opacity: 1; }
+
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,.08);
+    }
+    .logout-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,.12);
+      background: transparent;
+      color: rgba(255,255,255,.55);
+      font-size: 0.88rem;
+      font-family: 'DM Sans', sans-serif;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+    .logout-btn:hover {
+      background: rgba(220,53,69,.15);
+      border-color: rgba(220,53,69,.4);
+      color: #ff6b7a;
+    }
+
+    /* ── MAIN CONTENT ── */
+    .apex-main {
+      margin-left: var(--sidebar-w);
+      margin-top: var(--navbar-h);
+      padding: 32px;
+      min-height: calc(100vh - var(--navbar-h));
+      transition: margin-left var(--transition);
+    }
+    .apex-main.expanded { margin-left: 0; }
+
+    .sidebar-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(20,24,62,.45);
+      z-index: 140;
+    }
+
+    /* ── SECTION VIEWS ── */
+    .view { display: none; animation: fadeUp .3s ease forwards; }
+    .view.active { display: block; }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── HOME ── */
+    .section-title {
+      font-family: 'Sora', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--dark);
+      margin-bottom: 6px;
+    }
+    .section-sub {
+      color: #7a8499;
+      font-size: 0.9rem;
+      margin-bottom: 28px;
+    }
+
+    .overview-cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 18px;
+      margin-bottom: 28px;
+    }
+    .ov-card {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 22px 20px;
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 2px 12px rgba(19,99,198,.07);
+    }
+    .ov-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+    }
+    .ov-card.blue::before   { background: linear-gradient(90deg, var(--primary), var(--secondary)); }
+    .ov-card.teal::before   { background: linear-gradient(90deg, var(--secondary), #0fedb9); }
+    .ov-card.orange::before { background: linear-gradient(90deg, #f97316, #fb923c); }
+    .ov-card.purple::before { background: linear-gradient(90deg, #8b5cf6, #a78bfa); }
+
+    .ov-card-label { font-size: 0.78rem; color: #8a95ab; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; margin-bottom: 8px; }
+    .ov-card-value { font-family: 'Sora', sans-serif; font-size: 1.7rem; font-weight: 700; color: var(--dark); }
+    .ov-card-sub   { font-size: 0.78rem; color: #a0aec0; margin-top: 4px; }
+
+    .ov-card-icon {
+      position: absolute;
+      right: 16px; bottom: 14px;
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .ov-card.blue .ov-card-icon   { background: rgba(19,99,198,.1); }
+    .ov-card.teal .ov-card-icon   { background: rgba(21,172,225,.12); }
+    .ov-card.orange .ov-card-icon { background: rgba(249,115,22,.1); }
+    .ov-card.purple .ov-card-icon { background: rgba(139,92,246,.1); }
+
+    .home-grid {
+      display: grid;
+      grid-template-columns: 1fr 340px;
+      gap: 20px;
+    }
+    @media(max-width:900px) { .home-grid { grid-template-columns: 1fr; } }
+
+    .card-panel {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(19,99,198,.07);
+    }
+    .panel-title {
+      font-family: 'Sora', sans-serif;
+      font-weight: 600;
+      font-size: 0.98rem;
+      color: var(--dark);
+      margin-bottom: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title .badge-count {
+      background: rgba(19,99,198,.1);
+      color: var(--primary);
+      border-radius: 20px;
+      padding: 2px 10px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+
+    .activity-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 12px 10px;
+      border-radius: 10px;
+      transition: background var(--transition);
+    }
+    .activity-item:hover { background: var(--light); }
+    .act-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .act-dot.blue   { background: var(--primary); }
+    .act-dot.teal   { background: var(--secondary); }
+    .act-dot.orange { background: #f97316; }
+    .act-info { flex: 1; }
+    .act-title { font-size: 0.88rem; font-weight: 500; color: var(--dark); }
+    .act-time  { font-size: 0.76rem; color: #a0aec0; margin-top: 2px; }
+
+    .notif-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .notif-item {
+      display: flex;
+      gap: 12px;
+      padding: 12px 10px;
+      border-radius: 10px;
+      transition: background var(--transition);
+      align-items: flex-start;
+    }
+    .notif-item:hover { background: var(--light); }
+    .notif-icon {
+      width: 34px; height: 34px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .notif-icon.info    { background: rgba(19,99,198,.1);  color: var(--primary); }
+    .notif-icon.success { background: rgba(34,197,94,.12); color: #22c55e; }
+    .notif-icon.warn    { background: rgba(249,115,22,.1); color: #f97316; }
+    .notif-body { flex: 1; }
+    .notif-title { font-size: 0.86rem; font-weight: 500; color: var(--dark); }
+    .notif-desc  { font-size: 0.78rem; color: #8a95ab; margin-top: 2px; line-height: 1.4; }
+    .notif-time  { font-size: 0.72rem; color: #c0c9d8; margin-top: 4px; }
+
+    /* ── FORM PANEL ── */
+    .form-panel {
+      background: #fff;
+      border-radius: var(--card-radius);
+      padding: 32px;
+      box-shadow: 0 2px 12px rgba(19,99,198,.07);
+      max-width: 780px;
+    }
+    .form-panel .form-label {
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #5a6278;
+      letter-spacing: .02em;
+      margin-bottom: 6px;
+    }
+    .form-panel .form-control,
+    .form-panel .form-select {
+      border: 1.5px solid #e4e9f4;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 0.91rem;
+      color: var(--dark);
+      background: var(--light);
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .form-panel .form-control:focus,
+    .form-panel .form-select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(19,99,198,.12);
+      background: #fff;
+      outline: none;
+    }
+    .form-panel .btn-primary-apex {
+      background: linear-gradient(135deg, var(--primary), var(--secondary));
+      color: #fff;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 32px;
+      font-size: 0.92rem;
+      font-weight: 600;
+      font-family: 'Sora', sans-serif;
+      cursor: pointer;
+      transition: opacity var(--transition), transform var(--transition);
+      box-shadow: 0 4px 16px rgba(19,99,198,.28);
+    }
+    .form-panel .btn-primary-apex:hover {
+      opacity: .92;
+      transform: translateY(-1px);
+    }
+
+    .step-pills {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .step-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px 6px 8px;
+      border-radius: 30px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      background: var(--light);
+      color: #a0aec0;
+      border: 1.5px solid transparent;
+      transition: all var(--transition);
+    }
+    .step-pill.active {
+      background: rgba(19,99,198,.1);
+      color: var(--primary);
+      border-color: rgba(19,99,198,.2);
+    }
+    .step-pill.done {
+      background: rgba(34,197,94,.1);
+      color: #22c55e;
+      border-color: rgba(34,197,94,.2);
+    }
+    .step-pill .pill-num {
+      width: 20px; height: 20px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #8a95ab;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.72rem;
+    }
+    .step-pill.active .pill-num { background: var(--primary); color: #fff; }
+    .step-pill.done .pill-num   { background: #22c55e; color: #fff; }
+
+    .sub-form { display: none; }
+    .sub-form.active { display: block; }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width: 768px) {
+      .apex-sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+      .apex-sidebar.open { transform: translateX(0); }
+      .apex-main { margin-left: 0; }
+      .sidebar-overlay.show { display: block; }
+      .apex-main { padding: 20px 16px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="apex-navbar">
+  <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+    <span></span><span></span><span></span>
+  </button>
+  <div class="navbar-greeting">
+    <div class="time-greet" id="timeGreet">Good morning,</div>
+    <div class="user-greet" id="userGreet">Welcome back</div>
+  </div>
+  <a href="#" class="navbar-brand-end">
+    Apex<span class="brand-dot"></span>rs
+  </a>
+</nav>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- SIDEBAR -->
+<aside class="apex-sidebar" id="apexSidebar">
+  <p class="sidebar-label">Menu</p>
+  <ul class="sidebar-nav" id="sidebarNav">
+    <li>
+      <a href="#" class="active" data-view="home">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M3 12L12 3l9 9"/><path d="M9 21V12h6v9"/><path d="M3 12v9h5"/><path d="M16 21v-9h5v9"/></svg>
+        Home
+      </a>
+    </li>
+    <li>
+      <a href="#" data-view="profile">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        Profile
+      </a>
+    </li>
+    <li>
+      <a href="#" data-view="identity">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1.5"/><path d="M11 14h6M11 16h4"/></svg>
+        Identity Verification
+      </a>
+    </li>
+    <li>
+      <a href="#" data-view="payment">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1.5"/><path d="M13 15h4"/></svg>
+        Payment Method
+      </a>
+    </li>
+    <li>
+      <a href="#" data-view="opportunities">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+        Opportunities
+      </a>
+    </li>
+  </ul>
+  <div class="sidebar-footer">
+    <button class="logout-btn" id="logoutBtn">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>
+      Log out
+    </button>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="apex-main" id="apexMain">
+
+  <!-- HOME -->
+  <div class="view active" id="view-home">
+    <div class="section-title">Overview</div>
+    <div class="section-sub">Here's what's happening with your account today.</div>
+    <div class="overview-cards">
+  <div class="ov-card blue">
+    <div class="ov-card-label">Profile Status</div>
+    <div class="ov-card-value" id="ovProfileValue">—</div>
+    <div class="ov-card-sub"   id="ovProfileSub">Loading…</div>
+    <div class="ov-card-icon">
+      <svg width="22" height="22" fill="none" stroke="var(--primary)" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+    </div>
+  </div>
+  <div class="ov-card teal">
+    <div class="ov-card-label">Verification</div>
+    <div class="ov-card-value" id="ovVerifValue">—</div>
+    <div class="ov-card-sub"   id="ovVerifSub">Loading…</div>
+    <div class="ov-card-icon">
+      <svg width="22" height="22" fill="none" stroke="var(--secondary)" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    </div>
+  </div>
+  <div class="ov-card orange">
+    <div class="ov-card-label">Payment</div>
+    <div class="ov-card-value" id="ovPaymentValue">—</div>
+    <div class="ov-card-sub"   id="ovPaymentSub">Loading…</div>
+    <div class="ov-card-icon">
+      <svg width="22" height="22" fill="none" stroke="#f97316" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+    </div>
+  </div>
+  <div class="ov-card purple">
+    <div class="ov-card-label">Application</div>
+    <div class="ov-card-value" id="ovStatusValue">—</div>
+    <div class="ov-card-sub"   id="ovStatusSub">Loading…</div>
+    <div class="ov-card-icon">
+      <svg width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+    </div>
+  </div>
+</div>
+
+<div id="reviewBanner" style="
+  display:none;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #fff;
+  border-radius: 16px;
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  gap: 14px;
+  align-items: center;
+  font-family: 'Sora', sans-serif;
+  font-size: 0.94rem;
+"></div>
+
+    <div class="home-grid">
+      <div class="card-panel">
+        <div class="panel-title">
+          Recent Activity
+          <span class="badge-count">—</span>
+        </div>
+        <ul class="activity-list">
+          <li class="activity-item">
+            <span class="act-dot blue"></span>
+            <div class="act-info">
+              <div class="act-title">Account created successfully</div>
+              <div class="act-time">Today · Just now</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <span class="act-dot teal"></span>
+            <div class="act-info">
+              <div class="act-title">Email address verified</div>
+              <div class="act-time">Today · A moment ago</div>
+            </div>
+          </li>
+          <li class="activity-item">
+            <span class="act-dot orange"></span>
+            <div class="act-info">
+              <div class="act-title">Profile setup incomplete — action needed</div>
+              <div class="act-time">Today</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="card-panel">
+        <div class="panel-title">
+          Notifications
+          <span class="badge-count" id="notifBadge">—</span>
+        </div>
+        <ul class="notif-list" id="notifList">
+          <li class="notif-item">
+            <div class="notif-body">
+              <div class="notif-title">Loading notifications…</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <!-- PROFILE -->
+  <div class="view" id="view-profile">
+    <div class="section-title">Profile</div>
+    <div class="section-sub">Keep your personal details up to date.</div>
+    <div class="form-panel">
+      <form id="personalForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Full Name</label>
+            <input type="text" name="full_name" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Date of Birth</label>
+            <input type="date" name="dob" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Gender</label>
+            <select name="gender" class="form-select" required>
+              <option value="" selected disabled>Select Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Email Address</label>
+            <input type="email" name="email" class="form-control" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Full Address</label>
+            <input type="text" name="address" class="form-control" placeholder="Enter your full address" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Country</label>
+            <select name="country" id="country" class="form-select" required>
+              <option value="" selected disabled>Select Country</option>
+              <option value="US">United States</option>
+              <option value="CA" disabled>Canada</option>
+              <option value="UK">United Kingdom</option>
+              <option value="DE">Germany</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">State / Region</label>
+            <select name="state" id="state" class="form-select" required>
+              <option value="" selected disabled>Select State</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Zip Code</label>
+            <input type="text" name="zip" class="form-control" placeholder="Enter your zip/postal code" maxlength="10" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">City</label>
+            <input type="text" name="city" class="form-control" placeholder="Enter your city" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Education</label>
+            <select name="education" class="form-select" required>
+              <option value="" selected disabled>Select Education Level</option>
+              <option value="High-School">High-School</option>
+              <option value="Undergraduate">Undergraduate</option>
+              <option value="Graduate">Graduate</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Employment Status</label>
+            <select name="employment" class="form-select" required>
+              <option value="" selected disabled>Select Employment Status</option>
+              <option value="Unemployed">Unemployed</option>
+              <option value="Self-Employed">Self-Employed</option>
+              <option value="Employed">Employed</option>
+              <option value="Student">Student</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Additional languages spoken (if any)</label>
+            <textarea name="languages" class="form-control" rows="1" placeholder="E.g Spanish, Dutch.."></textarea>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Experience (if any)</label>
+            <textarea name="experience" class="form-control" rows="3" placeholder="Do you have any prior experience with remote work?"></textarea>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Available Equipment</label>
+            <select name="equipment" class="form-select" required>
+              <option value="" selected disabled>Select Equipment</option>
+              <option value="Laptop">Laptop</option>
+              <option value="Desktop">Desktop</option>
+              <option value="Tablet">Tablet</option>
+              <option value="Smartphone">Smartphone</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Phone Number</label>
+            <div class="input-group">
+              <select name="areacode" class="form-select" style="max-width:110px;" required>
+                <option value="" selected disabled>Code</option>
+                <option value="+1">+1</option>
+                <option value="+44">+44</option>
+                <option value="+49">+49</option>
+              </select>
+              <input type="tel" name="phone" class="form-control" placeholder="Enter your phone number" maxlength="15" required>
+            </div>
+          </div>
+          <div class="col-md-5">
+            <label class="form-label">Upload CV</label>
+            <input class="form-control form-control-lg" type="file" name="cv" accept=".pdf,.jpg,.jpeg,.png">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Referral Code</label>
+            <input type="text" id="referral" class="form-control" placeholder="Enter referral code (optional)">
+          </div>
+          <input type="hidden" name="referral" id="referral_hidden">
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn-primary-apex">Save Profile</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- IDENTITY -->
+  <div class="view" id="view-identity">
+    <div class="section-title">Identity Verification</div>
+    <div class="section-sub">Submit your government-issued documents to verify your identity.</div>
+    <div class="form-panel">
+      <div class="step-pills">
+        <div class="step-pill active" id="idPill1"><div class="pill-num">1</div>Document Type</div>
+        <div class="step-pill" id="idPill2"><div class="pill-num">2</div>Upload Documents</div>
+        <div class="step-pill" id="idPill3"><div class="pill-num">3</div>Review & Submit</div>
+      </div>
+      <div class="sub-form active" id="idStep1">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Document Type</label>
+            <select class="form-select" id="docType">
+              <option value="">Choose document…</option>
+              <option>National ID Card</option>
+              <option>Passport</option>
+              <option>Driver's Licence</option>
+              <option>Voter's Card</option>
+            </select>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Document Number</label>
+            <input type="text" class="form-control" placeholder="e.g. A1234567">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Issue Date</label>
+            <input type="date" class="form-control">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Expiry Date</label>
+            <input type="date" class="form-control">
+          </div>
+          <div class="col-12 mt-2">
+            <button type="button" class="btn-primary-apex" onclick="idGoTo(2)">Continue →</button>
+          </div>
+        </div>
+      </div>
+      <div class="sub-form" id="idStep2">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Front of Document</label>
+            <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Back of Document</label>
+            <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+          </div>
+          <div class="col-12">
+            <label class="form-label">Selfie with Document</label>
+            <input type="file" class="form-control" accept=".jpg,.jpeg,.png">
+          </div>
+          <div class="col-12 mt-2 d-flex gap-3">
+            <button type="button" class="btn-primary-apex" style="background:var(--light);color:var(--dark);box-shadow:none;" onclick="idGoTo(1)">← Back</button>
+            <button type="button" class="btn-primary-apex" onclick="idGoTo(3)">Continue →</button>
+          </div>
+        </div>
+      </div>
+      <div class="sub-form" id="idStep3">
+        <div class="row g-3">
+          <div class="col-12">
+            <div style="background:var(--light);border-radius:12px;padding:20px;">
+              <p style="font-size:.88rem;color:#5a6278;line-height:1.7;">
+                By submitting, you confirm that all information and documents provided are accurate, genuine, and belong to you. Apex Remote Services will review your submission within 1–3 business days.
+              </p>
+            </div>
+          </div>
+          <div class="col-12 mt-2 d-flex gap-3">
+            <button type="button" class="btn-primary-apex" style="background:var(--light);color:var(--dark);box-shadow:none;" onclick="idGoTo(2)">← Back</button>
+            <button type="button" class="btn-primary-apex" id="submitIdentityBtn">Submit for Verification</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- PAYMENT -->
+  <div class="view" id="view-payment">
+    <div class="section-title">Payment Method</div>
+    <div class="section-sub">Add your banking and payment information securely.</div>
+    <div class="form-panel">
+      <form id="paymentForm">
+        <div class="row g-3">
+          <div class="col-md-6">
+            <label class="form-label">Bank Name</label>
+            <input type="text" class="form-control" placeholder="e.g. Access Bank" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Account Holder Name</label>
+            <input type="text" class="form-control" placeholder="Full name on account" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Account Number / IBAN</label>
+            <input type="text" class="form-control" placeholder="Enter account or IBAN number" required>
+          </div>
+          <div class="col-md-6">
+            <label class="form-label">Routing Number / SWIFT Code</label>
+            <input type="text" class="form-control" placeholder="e.g. GTBINGLA">
+          </div>
+          <div class="col-12">
+            <label class="form-label">SSN / National ID / TIN <span style="font-weight:400;color:#a0aec0;">(for tax purposes)</span></label>
+            <input type="text" class="form-control" placeholder="Enter your SSN or Tax ID" required>
+          </div>
+          <div class="col-12">
+            <label class="form-label">Upload Utility Bill <span style="font-weight:400;color:#a0aec0;">(Proof of Address)</span></label>
+            <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+          </div>
+          <div class="col-12 mt-2">
+            <button type="submit" class="btn-primary-apex">Save Payment Details</button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- OPPORTUNITIES -->
+  <div class="view" id="view-opportunities">
+    <div class="section-title">Available Opportunities</div>
+    <div class="section-sub">Select ONE opportunity to complete your application.</div>
+    <div class="form-panel">
+      <form id="opportunityForm">
+        <div class="mb-3">
+          <label class="form-check w-100 p-3 rounded border">
+            <input class="form-check-input" type="radio" name="opportunity" value="Hedgehog by Handshake">
+            <strong>Hedgehog by Handshake</strong>
+            <div class="text-muted small">AI training & evaluation · $105/hr</div>
+          </label>
+        </div>
+        <div class="mb-3">
+          <label class="form-check w-100 p-3 rounded border">
+            <input class="form-check-input" type="radio" name="opportunity" value="Okta by Welocalize">
+            <strong>Okta by Welocalize</strong>
+            <div class="text-muted small">Identity & auth testing · $50/hr</div>
+          </label>
+        </div>
+        <div class="mb-3">
+          <label class="form-check w-100 p-3 rounded border">
+            <input class="form-check-input" type="radio" name="opportunity" value="Bot Automation by OneForma">
+            <strong>Bot Automation by OneForma</strong>
+            <div class="text-muted small">Bot training & QA · $55/hr</div>
+          </label>
+        </div>
+        <div class="mb-3">
+          <label class="form-check w-100 p-3 rounded border">
+            <input class="form-check-input" type="radio" name="opportunity" value="Aether by Outlier">
+            <strong>Aether by Outlier</strong>
+            <div class="text-muted small">Advanced AI feedback · $75/hr</div>
+          </label>
+        </div>
+        <div class="mb-3">
+          <label class="form-check w-100 p-3 rounded border">
+            <input class="form-check-input" type="radio" name="opportunity" value="Content Search Reviewer by Telus">
+            <strong>Content Search Reviewer by Telus</strong>
+            <div class="text-muted small">Search quality rating · $70/hr</div>
+          </label>
+        </div>
+        <div class="mb-4">
+          <label class="form-check w-100 p-3 rounded border">
+            <input class="form-check-input" type="radio" name="opportunity" value="Media Search Analyst by CrowdGen">
+            <strong>Media Search Analyst by CrowdGen</strong>
+            <div class="text-muted small">Media relevance analysis · $15–$35/hr</div>
+          </label>
+        </div>
+        <button type="submit" class="btn-primary-apex w-100" id="submitApplicationBtn" disabled>Submit Application</button>
+      </form>
+    </div>
+  </div>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="dashboard.js"></script>
+<script>
+  // ── Country/State dropdown ──
+  const statesByCountry = {
+    US: ["Alabama","Alaska","Arizona","Arkansas","California","Colorado","Connecticut","Delaware","Florida","Georgia","Hawaii","Idaho","Illinois","Indiana","Iowa","Kansas","Kentucky","Louisiana","Maine","Maryland","Massachusetts","Michigan","Minnesota","Mississippi","Missouri","Montana","Nebraska","Nevada","New Hampshire","New Jersey","New Mexico","New York","North Carolina","North Dakota","Ohio","Oklahoma","Oregon","Pennsylvania","Rhode Island","South Carolina","South Dakota","Tennessee","Texas","Utah","Vermont","Virginia","Washington","West Virginia","Wisconsin","Wyoming"],
+    UK: ["England","Scotland","Wales","Northern Ireland"],
+    DE: ["Baden-Württemberg","Bavaria","Berlin","Brandenburg","Bremen","Hamburg","Hesse","Lower Saxony","Mecklenburg-Vorpommern","North Rhine-Westphalia","Rhineland-Palatinate","Saarland","Saxony","Saxony-Anhalt","Schleswig-Holstein","Thuringia"]
+  };
+
+  document.getElementById("country").addEventListener("change", function () {
+    const states = statesByCountry[this.value];
+    const stateSelect = document.getElementById("state");
+    stateSelect.innerHTML = '<option value="" selected disabled>Select State</option>';
+    if (!states) return;
+    states.forEach(s => {
+      const o = document.createElement("option");
+      o.value = o.textContent = s;
+      stateSelect.appendChild(o);
+    });
+  });
+
+  // ── Referral code ──
+  const referralInput  = document.getElementById("referral");
+  const referralHidden = document.getElementById("referral_hidden");
+  const refFromUrl = new URLSearchParams(window.location.search).get("ref");
+
+  if (refFromUrl) localStorage.setItem("referral_code", refFromUrl);
+
+  const storedReferral = localStorage.getItem("referral_code");
+  if (storedReferral) {
+    referralInput.value = storedReferral;
+    referralHidden.value = storedReferral;
+    referralInput.disabled = true;
+    referralInput.style.backgroundColor = "#e9ecef";
+  } else {
+    referralInput.addEventListener("input", () => {
+      referralHidden.value = referralInput.value;
+    });
+  }
+</script>
+
+</body>
+</html>

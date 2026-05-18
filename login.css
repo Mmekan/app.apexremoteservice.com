@@ -1,0 +1,21 @@
+:root {
+      --primary: #1363C6;
+      --secondary: #15ACE1;
+      --light: #F4F7FE;
+      --dark: #14183E;
+    }
+    .brand-primary { color: var(--primary); }
+    .btn-primary {
+      color: #ffffff;
+      background-color: var(--primary);
+      transition: all 0.3s;
+    }
+    .btn-primary:hover {
+      background-color: #0f4a9c;
+      transform: translateY(-2px);
+    }
+    .tab-active {
+      border-bottom: 3px solid #1363C6;
+      color: #1363C6;
+      font-weight: 600;
+    }
