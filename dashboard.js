@@ -430,6 +430,23 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // =============================================
+// Card navigation helper
+// =============================================
+function navigateTo(view) {
+  document.querySelectorAll('#sidebarNav a').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+  const link = document.querySelector(`#sidebarNav a[data-view="${view}"]`);
+  if (link) link.classList.add('active');
+
+  const viewEl = document.getElementById(`view-${view}`);
+  if (viewEl) viewEl.classList.add('active');
+
+  // Scroll to top of content
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// =============================================
 // Sidebar toggle
 // =============================================
 const sidebar   = document.getElementById('apexSidebar');
