@@ -49,6 +49,9 @@
       background: var(--dark); display: flex; flex-direction: column;
       padding: 32px 16px 24px; z-index: 150;
       transition: transform var(--transition); overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - var(--navbar-h));
     }
     .sidebar-label {
       font-size: 0.68rem; font-weight: 600; letter-spacing: .12em;
@@ -66,6 +69,11 @@
     .sidebar-nav li a.active {
       background: linear-gradient(135deg, var(--primary), var(--secondary));
       color: #fff; box-shadow: 0 4px 16px rgba(19,99,198,.35);
+    }
+    .sidebar-footer {
+      margin-top: auto;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,.08);
     }
     .nav-icon { width: 22px; height: 22px; flex-shrink: 0; opacity: .8; }
     .sidebar-footer {
@@ -234,7 +242,7 @@
     <div style="font-size:1.05rem;font-weight:600;color:var(--dark);" id="adminGreet">Welcome</div>
   </div>
   <span class="admin-badge">Admin</span>
-  <a href="#" class="navbar-brand-end"><span class="brand-dot"></span>Apex Remote Services</a>
+  <a href="#" class="navbar-brand-end">Apex<span class="brand-dot"></span>rs</a>
 </nav>
 
 <!-- SIDEBAR -->
@@ -255,11 +263,14 @@
     </li>
   </ul>
   <div class="sidebar-footer">
-    <button class="logout-btn" id="adminLogoutBtn">
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path d="M17 16l4-4m0 0l-4-4m4 4H7"/><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/></svg>
-      Log out
-    </button>
-  </div>
+  <button class="logout-btn" id="adminLogoutBtn">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path d="M17 16l4-4m0 0l-4-4m4 4H7"/>
+      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/>
+    </svg>
+    Log out
+  </button>
+</div>
 </aside>
 
 <!-- MAIN -->
