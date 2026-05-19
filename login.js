@@ -8,11 +8,11 @@ const supabaseClient = createClient(
   'sb_publishable_D84XYOx5qE_iGSbKk0WE5g_KJf-qb1J'
 );
 
-// Redirect already-logged-in users
+// Redirect already-logged-in users — but only if session is fully valid
 (async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
-  if (session) {
-    // Check if already-logged-in user is admin
+
+  if (session?.user?.email_confirmed_at) {
     const { data: profile } = await supabaseClient
       .from('profiles')
       .select('is_admin')
