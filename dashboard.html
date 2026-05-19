@@ -514,40 +514,56 @@
     <div class="section-title">Overview</div>
     <div class="section-sub">Here's what's happening with your account today.</div>
     <div class="overview-cards">
-  <div class="ov-card blue">
+  <div class="ov-card blue" onclick="navigateTo('profile')" style="cursor:pointer;"
+    title="Go to Profile">
     <div class="ov-card-label">Profile Status</div>
     <div class="ov-card-value" id="ovProfileValue">—</div>
-    <div class="ov-card-sub"   id="ovProfileSub">Loading…</div>
+    <div class="ov-card-sub" id="ovProfileSub">Loading…</div>
     <div class="ov-card-icon">
-      <svg width="22" height="22" fill="none" stroke="var(--primary)" stroke-width="1.8" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      <svg width="22" height="22" fill="none" stroke="var(--primary)" stroke-width="1.8" viewBox="0 0 24 24">
+        <circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+      </svg>
     </div>
   </div>
-  <div class="ov-card teal">
+
+  <div class="ov-card teal" onclick="navigateTo('identity')" style="cursor:pointer;"
+    title="Go to Identity Verification">
     <div class="ov-card-label">Verification</div>
     <div class="ov-card-value" id="ovVerifValue">—</div>
-    <div class="ov-card-sub"   id="ovVerifSub">Loading…</div>
+    <div class="ov-card-sub" id="ovVerifSub">Loading…</div>
     <div class="ov-card-icon">
-      <svg width="22" height="22" fill="none" stroke="var(--secondary)" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <svg width="22" height="22" fill="none" stroke="var(--secondary)" stroke-width="1.8" viewBox="0 0 24 24">
+        <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
+      </svg>
     </div>
   </div>
-  <div class="ov-card orange">
+
+  <div class="ov-card orange" onclick="navigateTo('payment')" style="cursor:pointer;"
+    title="Go to Payment Method">
     <div class="ov-card-label">Payment</div>
     <div class="ov-card-value" id="ovPaymentValue">—</div>
-    <div class="ov-card-sub"   id="ovPaymentSub">Loading…</div>
+    <div class="ov-card-sub" id="ovPaymentSub">Loading…</div>
     <div class="ov-card-icon">
-      <svg width="22" height="22" fill="none" stroke="#f97316" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg>
+      <svg width="22" height="22" fill="none" stroke="#f97316" stroke-width="1.8" viewBox="0 0 24 24">
+        <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
+      </svg>
     </div>
   </div>
-  <div class="ov-card purple">
+
+  <div class="ov-card purple" onclick="navigateTo('opportunities')" style="cursor:pointer;"
+    title="Go to Opportunities">
     <div class="ov-card-label">Application</div>
     <div class="ov-card-value" id="ovStatusValue">—</div>
-    <div class="ov-card-sub"   id="ovStatusSub">Loading…</div>
+    <div class="ov-card-sub" id="ovStatusSub">Loading…</div>
     <div class="ov-card-icon">
-      <svg width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="1.8" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14,2 14,8 20,8"/></svg>
+      <svg width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="1.8" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+      </svg>
     </div>
   </div>
 </div>
-
+    
 <div id="reviewBanner" style="
   display:none;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
