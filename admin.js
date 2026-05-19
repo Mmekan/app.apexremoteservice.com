@@ -386,10 +386,13 @@ function bindEvents() {
   };
 
   // Logout
-  document.getElementById('adminLogoutBtn').addEventListener('click', async () => {
-    await supabaseClient.auth.signOut();
-    window.location.replace('login.html');
-  });
+ document.getElementById('adminLogoutBtn').addEventListener('click', async () => {
+  await supabaseClient.auth.signOut({ scope: 'local' });
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('sb-'))
+    .forEach(k => localStorage.removeItem(k));
+  window.location.replace('login.html');
+});
 }
 
 // =============================================
