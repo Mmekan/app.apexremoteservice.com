@@ -8,16 +8,15 @@ const supabaseClient = createClient(
 );
 
 // =============================================
-// On load: clear stale sessions, redirect if valid
+// On load: clear broken tokens, redirect if valid session
 // =============================================
 (async () => {
-  // Wipe any broken partial tokens first
+  // Remove any malformed localStorage tokens
   Object.keys(localStorage)
     .filter(k => k.startsWith('sb-'))
     .forEach(k => {
       try {
         const val = JSON.parse(localStorage.getItem(k));
-        // Remove if token looks expired or malformed
         if (!val || !val.access_token) localStorage.removeItem(k);
       } catch { localStorage.removeItem(k); }
     });
@@ -43,34 +42,33 @@ function switchTab(mode) {
   currentMode = mode;
   const isSignup = mode === 'signup';
 
-  document.getElementById('signupFields').style.display = isSignup ? 'grid' : 'none';
+  document.getElementById('signupFields').style.display = isSignup ? 'grid'  : 'none';
   document.getElementById('forgotRow').style.display    = isSignup ? 'none'  : 'block';
   document.getElementById('btnText').textContent        = isSignup ? 'Create Account' : 'Sign In';
-
-  document.getElementById('firstName').required = isSignup;
-  document.getElementById('lastName').required  = isSignup;
+  document.getElementById('firstName').required         = isSignup;
+  document.getElementById('lastName').required          = isSignup;
 
   document.getElementById('tabLogin').classList.toggle('tab-active',  !isSignup);
   document.getElementById('tabSignup').classList.toggle('tab-active',  isSignup);
 
   document.getElementById('password').value = '';
-  document.getElementById('email').focus();
 }
 
 // =============================================
-// Password visibility
+// Password visibility toggle
 // =============================================
 function togglePassword() {
-  const input = document.getElementById('password');
-  const icon  = document.getElementById('eyeIcon');
+  const input   = document.getElementById('password');
+  const icon    = document.getElementById('eyeIcon');
   const showing = input.type === 'text';
-  input.type = showing ? 'password' : 'text';
+  input.type    = showing ? 'password' : 'text';
+
   icon.innerHTML = showing
     ? `<path stroke-linecap="round" stroke-linejoin="round"
          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
        <path stroke-linecap="round" stroke-linejoin="round"
-         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
-            -1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`
+         d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943
+            9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>`
     : `<path stroke-linecap="round" stroke-linejoin="round"
          d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7
             a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243
@@ -85,13 +83,14 @@ function togglePassword() {
 // =============================================
 async function handleSubmit(e) {
   e.preventDefault();
+
   const btn     = document.getElementById('submitBtn');
   const btnText = document.getElementById('btnText');
   const spinner = document.getElementById('btnSpinner');
 
-  btn.disabled         = true;
-  btnText.style.display  = 'none';
-  spinner.style.display  = 'flex';
+  btn.disabled          = true;
+  btnText.style.display = 'none';
+  spinner.style.display = 'flex';
 
   try {
     if (currentMode === 'signup') {
@@ -108,7 +107,7 @@ async function handleSubmit(e) {
 
       if (error) { alert(error.message); return; }
 
-      alert('Signup successful! Check your email to confirm your account.');
+      alert('Signup successful! Check your email to confirm your account before signing in.');
       switchTab('login');
       return;
     }
@@ -133,9 +132,9 @@ async function handleSubmit(e) {
     console.error(err);
     alert('An unexpected error occurred. Please try again.');
   } finally {
-    btn.disabled         = false;
-    btnText.style.display  = 'inline';
-    spinner.style.display  = 'none';
+    btn.disabled          = false;
+    btnText.style.display = 'inline';
+    spinner.style.display = 'none';
   }
 }
 
