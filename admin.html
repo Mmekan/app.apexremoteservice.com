@@ -281,24 +281,23 @@
     <div class="section-title">Overview</div>
     <div class="section-sub">Summary of all applicants on the platform.</div>
     <div class="stat-cards">
-      <div class="stat-card blue">
-        <div class="stat-label">Total Applicants</div>
-        <div class="stat-value" id="statTotal">—</div>
-      </div>
-      <div class="stat-card orange">
-        <div class="stat-label">In Review</div>
-        <div class="stat-value" id="statReview">—</div>
-      </div>
-      <div class="stat-card green">
-        <div class="stat-label">Approved</div>
-        <div class="stat-value" id="statApproved">—</div>
-      </div>
-      <div class="stat-card red">
-        <div class="stat-label">Rejected</div>
-        <div class="stat-value" id="statRejected">—</div>
-      </div>
-    </div>
-
+  <div class="stat-card blue" onclick="adminNavigate('applicants','all')" style="cursor:pointer;" title="View all applicants">
+    <div class="stat-label">Total Applicants</div>
+    <div class="stat-value" id="statTotal">—</div>
+  </div>
+  <div class="stat-card orange" onclick="adminNavigate('applicants','in_review')" style="cursor:pointer;" title="View in review">
+    <div class="stat-label">In Review</div>
+    <div class="stat-value" id="statReview">—</div>
+  </div>
+  <div class="stat-card green" onclick="adminNavigate('applicants','approved')" style="cursor:pointer;" title="View approved">
+    <div class="stat-label">Approved</div>
+    <div class="stat-value" id="statApproved">—</div>
+  </div>
+  <div class="stat-card red" onclick="adminNavigate('applicants','rejected')" style="cursor:pointer;" title="View rejected">
+    <div class="stat-label">Rejected</div>
+    <div class="stat-value" id="statRejected">—</div>
+  </div>
+</div>
     <!-- Recent submissions -->
     <div class="table-panel">
       <div class="panel-title">
