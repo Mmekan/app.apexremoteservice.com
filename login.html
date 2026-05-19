@@ -181,6 +181,24 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="login.js"></script>
+  <script>
+  // Clear any stale auth state when login page loads
+  // This ensures switching accounts always works cleanly
+  window.addEventListener('load', async () => {
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    // If session exists but user navigated back to login manually, sign them out
+    if (session && window.location.pathname.includes('login')) {
+      // Don't sign out — just let the redirect check above handle it
+      // But do clear localStorage of any broken partial tokens
+      const keys = Object.keys(localStorage).filter(k => k.startsWith('sb-'));
+      // Only clear if session is NOT confirmed (broken/partial session)
+      if (!session.user?.email_confirmed_at) {
+        keys.forEach(k => localStorage.removeItem(k));
+        console.log('Cleared stale session');
+      }
+    }
+  });
+</script>
 
 </body>
 </html>
