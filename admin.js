@@ -16,10 +16,8 @@ let activeApplicant = null;
 // =============================================
 document.addEventListener('DOMContentLoaded', async () => {
   const { data: { session } } = await supabaseClient.auth.getSession();
-
   if (!session) { window.location.replace('login.html'); return; }
 
-  // Check admin flag
   const { data: profile } = await supabaseClient
     .from('profiles')
     .select('first_name, last_name, is_admin')
@@ -27,7 +25,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     .single();
 
   if (!profile?.is_admin) {
-    // Not an admin — send back to user dashboard
     window.location.replace('dashboard.html');
     return;
   }
@@ -43,7 +40,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load all applicants
 // =============================================
 async function loadAllData() {
-  // Fetch all profiles + their applications in one go
   const { data: profiles, error } = await supabaseClient
     .from('profiles')
     .select(`
@@ -61,9 +57,8 @@ async function loadAllData() {
     .eq('is_admin', false)
     .order('created_at', { ascending: false });
 
-  if (error) { console.error(error); return; }
+  if (error) { console.error('Load error:', error); return; }
 
-  // Flatten
   allApplicants = (profiles || []).map(p => ({
     ...p,
     app: p.applications?.[0] || {}
@@ -89,6 +84,9 @@ function renderStats() {
   document.getElementById('statRejected').textContent = rejected;
 }
 
+// =============================================
+// Admin card navigation
+// =============================================
 function adminNavigate(view, filter) {
   document.querySelectorAll('#adminNav a').forEach(l => l.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
@@ -97,7 +95,6 @@ function adminNavigate(view, filter) {
   if (link) link.classList.add('active');
   document.getElementById(`view-${view}`)?.classList.add('active');
 
-  // Apply filter
   document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
   const tab = document.querySelector(`.filter-tab[data-filter="${filter}"]`);
   if (tab) tab.classList.add('active');
@@ -105,7 +102,7 @@ function adminNavigate(view, filter) {
 }
 
 // =============================================
-// Recent table (overview page — top 5 submitted)
+// Recent table
 // =============================================
 function renderRecentTable() {
   const recent = allApplicants
@@ -129,7 +126,7 @@ function renderRecentTable() {
 }
 
 // =============================================
-// Applicants table (filtered)
+// Applicants table
 // =============================================
 function renderApplicantsTable(list) {
   const tbody = document.getElementById('applicantsTable');
@@ -139,9 +136,9 @@ function renderApplicantsTable(list) {
   }
 
   tbody.innerHTML = list.map(a => {
-    const steps    = [a.app.profile_complete, a.app.identity_complete, a.app.payment_complete];
-    const done     = steps.filter(Boolean).length;
-    const pct      = Math.round((done / 3) * 100);
+    const steps = [a.app.profile_complete, a.app.identity_complete, a.app.payment_complete];
+    const done  = steps.filter(Boolean).length;
+    const pct   = Math.round((done / 3) * 100);
     return `
       <tr onclick="openModal('${a.user_id}')">
         <td><strong>${fullName(a)}</strong></td>
@@ -151,7 +148,9 @@ function renderApplicantsTable(list) {
         </td>
         <td>
           <div style="display:flex;align-items:center;gap:8px;">
-            <div class="progress-mini"><div class="progress-mini-fill" style="width:${pct}%"></div></div>
+            <div class="progress-mini">
+              <div class="progress-mini-fill" style="width:${pct}%"></div>
+            </div>
             <span style="font-size:.78rem;color:#8a95ab;">${pct}%</span>
           </div>
         </td>
@@ -171,7 +170,6 @@ function openModal(userId) {
 
   document.getElementById('modalName').textContent = fullName(a);
 
-  // Detail grid
   document.getElementById('modalDetails').innerHTML = [
     ['Email',       a.email],
     ['Country',     a.country],
@@ -191,25 +189,25 @@ function openModal(userId) {
       <span>${val || '—'}</span>
     </div>`).join('');
 
-  // Checklist
   document.getElementById('modalChecklist').innerHTML = [
-    ['Profile',  a.app.profile_complete],
-    ['Identity', a.app.identity_complete],
-    ['Payment',  a.app.payment_complete],
+    ['Profile',     a.app.profile_complete],
+    ['Identity',    a.app.identity_complete],
+    ['Payment',     a.app.payment_complete],
     ['Opportunity', a.app.opportunity_selected],
   ].map(([label, done]) => `
-    <div style="
-      display:flex;align-items:center;gap:6px;
-      padding:5px 12px;border-radius:20px;font-size:.8rem;font-weight:600;
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;
+      font-size:.8rem;font-weight:600;
       background:${done ? 'rgba(34,197,94,.12)' : 'rgba(239,68,68,.08)'};
-      color:${done ? '#16a34a' : '#ef4444'};
-    ">
+      color:${done ? '#16a34a' : '#ef4444'};">
       ${done ? '✓' : '✗'} ${label}
     </div>`).join('');
 
-  // Show/hide action buttons based on current status
-  const status = a.app.application_status;
+  // Documents section
+  loadApplicantDocuments(a.user_id);
+
+  const status  = a.app.application_status;
   const actions = document.getElementById('modalActions');
+
   if (status === 'approved' || status === 'rejected') {
     actions.innerHTML = `
       <div style="font-size:.88rem;color:#8a95ab;padding:8px 0;">
@@ -218,7 +216,7 @@ function openModal(userId) {
       <button class="btn-neutral" id="modalClose2">Close</button>`;
     document.getElementById('modalClose2').onclick = closeModal;
   } else {
-    document.getElementById('modalActions').innerHTML = `
+    actions.innerHTML = `
       <button class="btn-approve" id="btnApprove">✓ Approve</button>
       <button class="btn-reject"  id="btnRejectToggle">✕ Reject</button>
       <button class="btn-neutral" id="modalClose2">Cancel</button>`;
@@ -227,11 +225,62 @@ function openModal(userId) {
     document.getElementById('modalClose2').onclick     = closeModal;
   }
 
-  // Reset reject reason
   document.getElementById('rejectReason').style.display = 'none';
   document.getElementById('rejectMessage').value        = '';
-
   document.getElementById('modalOverlay').classList.add('open');
+}
+
+// =============================================
+// Load applicant documents from Storage
+// =============================================
+async function loadApplicantDocuments(userId) {
+  const docsEl = document.getElementById('modalDocuments');
+  if (!docsEl) return;
+
+  docsEl.innerHTML = '<div style="color:#a0aec0;font-size:.82rem;">Loading documents…</div>';
+
+  const folders = ['cv', 'identity', 'selfie'];
+  const allFiles = [];
+
+  for (const folder of folders) {
+    const { data: files } = await supabaseClient.storage
+      .from('documents')
+      .list(`${userId}/${folder}`);
+
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const { data: urlData } = supabaseClient.storage
+          .from('documents')
+          .getPublicUrl(`${userId}/${folder}/${file.name}`);
+
+        allFiles.push({
+          name:   file.name,
+          folder: folder,
+          url:    urlData.publicUrl
+        });
+      }
+    }
+  }
+
+  if (!allFiles.length) {
+    docsEl.innerHTML = '<div style="color:#a0aec0;font-size:.82rem;">No documents uploaded yet.</div>';
+    return;
+  }
+
+  docsEl.innerHTML = allFiles.map(f => `
+    <a href="${f.url}" target="_blank" style="
+      display:inline-flex;align-items:center;gap:6px;
+      padding:6px 12px;border-radius:8px;
+      background:rgba(19,99,198,.08);color:var(--primary);
+      font-size:.8rem;font-weight:600;text-decoration:none;
+      border:1px solid rgba(19,99,198,.15);margin:4px 4px 4px 0;
+      transition:all .2s;">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+      </svg>
+      ${f.folder}: ${f.name}
+    </a>`).join('');
 }
 
 function closeModal() {
@@ -245,7 +294,7 @@ function toggleRejectReason() {
 }
 
 // =============================================
-// Call Edge Function to send email
+// Email notification
 // =============================================
 async function sendNotificationEmail(type, applicant) {
   try {
@@ -282,10 +331,7 @@ async function approveApplicant() {
 
   const { error } = await supabaseClient
     .from('applications')
-    .update({
-      application_status: 'approved',
-      updated_at:         new Date().toISOString()
-    })
+    .update({ application_status: 'approved', updated_at: new Date().toISOString() })
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
@@ -295,7 +341,6 @@ async function approveApplicant() {
     return;
   }
 
-  // In-app notification
   await supabaseClient.from('notifications').insert({
     user_id:     activeApplicant.user_id,
     title:       'Application approved! 🎉',
@@ -303,9 +348,7 @@ async function approveApplicant() {
     type:        'success'
   });
 
-  // Email notification
   await sendNotificationEmail('approved', activeApplicant);
-
   closeModal();
   await loadAllData();
 }
@@ -322,10 +365,7 @@ async function confirmReject() {
 
   const { error } = await supabaseClient
     .from('applications')
-    .update({
-      application_status: 'rejected',
-      updated_at:         new Date().toISOString()
-    })
+    .update({ application_status: 'rejected', updated_at: new Date().toISOString() })
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
@@ -335,7 +375,6 @@ async function confirmReject() {
     return;
   }
 
-  // In-app notification
   await supabaseClient.from('notifications').insert({
     user_id:     activeApplicant.user_id,
     title:       'Application not accepted',
@@ -345,15 +384,13 @@ async function confirmReject() {
     type: 'warn'
   });
 
-  // Email notification
   await sendNotificationEmail('rejected', activeApplicant);
-
   closeModal();
   await loadAllData();
 }
 
 // =============================================
-// Filter tabs
+// Filter
 // =============================================
 function applyFilter(filter) {
   currentFilter = filter;
@@ -364,27 +401,9 @@ function applyFilter(filter) {
 }
 
 // =============================================
-// Admin card navigation
-// =============================================
-function adminNavigate(view, filter) {
-  document.querySelectorAll('#adminNav a').forEach(l => l.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-
-  const link = document.querySelector(`#adminNav a[data-view="${view}"]`);
-  if (link) link.classList.add('active');
-  document.getElementById(`view-${view}`)?.classList.add('active');
-
-  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-  const tab = document.querySelector(`.filter-tab[data-filter="${filter}"]`);
-  if (tab) tab.classList.add('active');
-  applyFilter(filter);
-}
-
-// =============================================
-// Bind all events
+// Bind events
 // =============================================
 function bindEvents() {
-  // Sidebar nav
   document.querySelectorAll('#adminNav a').forEach(link => {
     link.addEventListener('click', e => {
       e.preventDefault();
@@ -396,7 +415,6 @@ function bindEvents() {
     });
   });
 
-  // Filter tabs
   document.querySelectorAll('.filter-tab').forEach(tab => {
     tab.addEventListener('click', () => {
       document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
@@ -405,26 +423,23 @@ function bindEvents() {
     });
   });
 
-  // Modal close
-  document.getElementById('modalClose').onclick  = closeModal;
+  document.getElementById('modalClose').onclick = closeModal;
   document.getElementById('modalOverlay').addEventListener('click', e => {
     if (e.target === document.getElementById('modalOverlay')) closeModal();
   });
 
-  // Reject confirm/cancel
   document.getElementById('btnRejectConfirm').onclick = confirmReject;
   document.getElementById('btnRejectCancel').onclick  = () => {
     document.getElementById('rejectReason').style.display = 'none';
   };
 
-  // Logout
- document.getElementById('adminLogoutBtn').addEventListener('click', async () => {
-  await supabaseClient.auth.signOut({ scope: 'local' });
-  Object.keys(localStorage)
-    .filter(k => k.startsWith('sb-'))
-    .forEach(k => localStorage.removeItem(k));
-  window.location.replace('login.html');
-});
+  document.getElementById('adminLogoutBtn').addEventListener('click', async () => {
+    await supabaseClient.auth.signOut({ scope: 'local' });
+    Object.keys(localStorage)
+      .filter(k => k.startsWith('sb-'))
+      .forEach(k => localStorage.removeItem(k));
+    window.location.replace('login.html');
+  });
 }
 
 // =============================================
@@ -441,5 +456,5 @@ function statusPill(status) {
 
 function formatDate(ts) {
   if (!ts) return '—';
-  return new Date(ts).toLocaleDateString('en-GB', { day:'numeric', month:'short', year:'numeric' });
+  return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
