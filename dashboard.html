@@ -100,6 +100,14 @@
       display: inline-block;
     }
 
+    .ov-card[onclick] {
+  transition: transform var(--transition), box-shadow var(--transition);
+}
+.ov-card[onclick]:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(19,99,198,.15);
+}
+
     /* ── SIDEBAR ── */
     .apex-sidebar {
       position: fixed;
