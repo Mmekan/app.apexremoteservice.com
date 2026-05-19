@@ -7,9 +7,6 @@ const supabaseClient = createClient(
   'sb_publishable_D84XYOx5qE_iGSbKk0WE5g_KJf-qb1J'
 );
 
-// =============================================
-// Global session
-// =============================================
 let currentSession = null;
 let currentProfile = null;
 
@@ -28,7 +25,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   currentSession = session;
 
-  // Load profile
   const { data: profile } = await supabaseClient
     .from('profiles')
     .select('*')
@@ -37,13 +33,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   currentProfile = profile;
 
-  // Redirect admin away from user dashboard
   if (profile?.is_admin) {
     window.location.replace('admin.html');
     return;
   }
 
-  // Greeting
   const displayName =
     `${profile?.first_name || ''} ${profile?.last_name || ''}`.trim()
     || session.user.email;
@@ -54,14 +48,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('timeGreet').textContent = greetWord + ',';
   document.getElementById('userGreet').textContent = displayName;
 
-  // Pre-fill profile form with existing data
   prefillProfileForm(profile, session.user.email);
-
-  // Load application state
   await refreshDashboard();
-
-  // Load notifications
   await loadNotifications();
+  await loadRecentActivity();
 });
 
 // =============================================
@@ -76,35 +66,31 @@ async function refreshDashboard() {
 
   if (!app) return;
 
-  const profileDone   = !!app.profile_complete;
-  const identityDone  = !!app.identity_complete;
-  const paymentDone   = !!app.payment_complete;
-  const inReview      = app.application_status === 'in_review';
-  const approved      = app.application_status === 'approved';
-  const rejected      = app.application_status === 'rejected';
+  const profileDone  = !!app.profile_complete;
+  const identityDone = !!app.identity_complete;
+  const paymentDone  = !!app.payment_complete;
+  const inReview     = app.application_status === 'in_review';
+  const approved     = app.application_status === 'approved';
+  const rejected     = app.application_status === 'rejected';
 
-  // Completion percentage (profile, identity, payment = 3 steps)
-  // Completion percentage across all 3 steps
   const stepsTotal    = 3;
   const stepsComplete = [profileDone, identityDone, paymentDone].filter(Boolean).length;
   const pct           = Math.round((stepsComplete / stepsTotal) * 100);
 
   document.getElementById('ovProfileValue').textContent = pct + '%';
-  document.getElementById('ovProfileSub').textContent   =
+  document.getElementById('ovProfileSub').textContent =
     pct === 100 ? '✓ All sections complete' :
     pct === 0   ? 'Start completing your profile' :
     `${stepsComplete} of ${stepsTotal} sections done`;
 
-  // Overview cards
-  document.getElementById('ovVerifValue').textContent    = identityDone ? 'Verified'  : 'Pending';
-  document.getElementById('ovVerifSub').textContent      = identityDone ? '✓ Identity confirmed'  : 'Submit your ID docs';
-  document.getElementById('ovPaymentValue').textContent  = paymentDone  ? 'Added'     : 'Not Set';
-  document.getElementById('ovPaymentSub').textContent    = paymentDone  ? '✓ Payment method saved': 'Add a payment method';
+  document.getElementById('ovVerifValue').textContent   = identityDone ? 'Verified'              : 'Pending';
+  document.getElementById('ovVerifSub').textContent     = identityDone ? '✓ Identity confirmed'   : 'Submit your ID docs';
+  document.getElementById('ovPaymentValue').textContent = paymentDone  ? 'Added'                 : 'Not Set';
+  document.getElementById('ovPaymentSub').textContent   = paymentDone  ? '✓ Payment method saved' : 'Add a payment method';
 
-  // Application status card
   if (inReview) {
     document.getElementById('ovStatusValue').textContent = 'In Review';
-    document.getElementById('ovStatusSub').textContent   = 'We\'re reviewing your application';
+    document.getElementById('ovStatusSub').textContent   = "We're reviewing your application";
   } else if (approved) {
     document.getElementById('ovStatusValue').textContent = 'Approved';
     document.getElementById('ovStatusSub').textContent   = '✓ Application accepted';
@@ -116,30 +102,35 @@ async function refreshDashboard() {
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
   }
 
-  // Enable submit button only if all 3 sections done and not already submitted
+  // Submit button state
   const submitBtn = document.getElementById('submitApplicationBtn');
-if (submitBtn) {
-  const allDone          = profileDone && identityDone && paymentDone;
-  const lockedStatuses   = ['in_review', 'approved'];
-  const alreadyLocked    = lockedStatuses.includes(app.application_status);
+  if (submitBtn) {
+    const allDone       = profileDone && identityDone && paymentDone;
+    const alreadyLocked = ['in_review', 'approved'].includes(app.application_status);
 
-  // Rejected users CAN resubmit
-  submitBtn.disabled     = !allDone || alreadyLocked;
-  submitBtn.textContent  =
-    app.application_status === 'approved'  ? '✓ Application Approved' :
-    app.application_status === 'in_review' ? 'Application Submitted'  :
-    app.application_status === 'rejected'  ? 'Resubmit Application'   :
-    allDone ? 'Submit Application' : 'Complete all sections to unlock';
+    submitBtn.disabled    = !allDone || alreadyLocked;
+    submitBtn.textContent =
+      approved  ? '✓ Application Approved' :
+      inReview  ? 'Application Submitted'  :
+      rejected  ? 'Resubmit Application'   :
+      allDone   ? 'Submit Application'     : 'Complete all sections to unlock';
 
-  submitBtn.style.opacity = alreadyLocked ? '0.6' : '1';
-  submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';
-}
+    submitBtn.style.opacity = alreadyLocked ? '0.6' : '1';
+    submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';
+  }
 
-  // Show in-review banner if submitted
+  // Lock forms if submitted or approved
+  if (inReview || approved) {
+    lockFormsAfterSubmission();
+  }
+
+  // Review banner
   const reviewBanner = document.getElementById('reviewBanner');
   if (reviewBanner) {
     reviewBanner.style.display = (inReview || approved || rejected) ? 'flex' : 'none';
+
     if (inReview) {
+      reviewBanner.style.background = 'linear-gradient(135deg,var(--primary),var(--secondary))';
       reviewBanner.innerHTML = `
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
@@ -156,20 +147,43 @@ if (submitBtn) {
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
           <polyline points="20 6 9 17 4 12"/>
         </svg>
-        <div><strong>Application approved!</strong>
+        <div>
+          <strong>Application approved!</strong>
           <div style="font-size:.82rem;opacity:.8;margin-top:2px;">Welcome aboard. Check your email for next steps.</div>
         </div>`;
     } else if (rejected) {
       reviewBanner.style.background = 'linear-gradient(135deg,#ef4444,#dc2626)';
       reviewBanner.innerHTML = `
         <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-          <circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/>
         </svg>
-        <div><strong>Application not accepted</strong>
+        <div>
+          <strong>Application not accepted</strong>
           <div style="font-size:.82rem;opacity:.8;margin-top:2px;">Check your notifications and email for details.</div>
         </div>`;
     }
   }
+}
+
+// =============================================
+// Lock all forms after submission
+// =============================================
+function lockFormsAfterSubmission() {
+  const lock = (el) => {
+    if (!el) return;
+    el.disabled         = true;
+    el.style.opacity    = '0.6';
+    el.style.cursor     = 'not-allowed';
+    el.textContent      = '✓ Submitted';
+  };
+
+  lock(document.querySelector('#personalForm button[type="submit"]'));
+  lock(document.getElementById('submitIdentityBtn'));
+  lock(document.querySelector('#paymentForm button[type="submit"]'));
+
+  document.querySelectorAll('#opportunityForm input[type="radio"]')
+    .forEach(r => r.disabled = true);
 }
 
 // =============================================
@@ -203,9 +217,7 @@ async function loadNotifications() {
 
   list.innerHTML = notifs.map(n => `
     <li class="notif-item" style="${!n.read ? 'background:rgba(19,99,198,.04);border-radius:10px;' : ''}">
-      <div class="notif-icon ${n.type}">
-        ${notifIcon(n.type)}
-      </div>
+      <div class="notif-icon ${n.type}">${notifIcon(n.type)}</div>
       <div class="notif-body">
         <div class="notif-title">${n.title}</div>
         <div class="notif-desc">${n.description || ''}</div>
@@ -213,7 +225,6 @@ async function loadNotifications() {
       </div>
     </li>`).join('');
 
-  // Mark all as read after viewing
   await supabaseClient
     .from('notifications')
     .update({ read: true })
@@ -229,18 +240,72 @@ function notifIcon(type) {
 
 function timeAgo(ts) {
   const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (diff < 60)   return 'Just now';
-  if (diff < 3600) return `${Math.floor(diff/60)}m ago`;
-  if (diff < 86400)return `${Math.floor(diff/3600)}h ago`;
-  return `${Math.floor(diff/86400)}d ago`;
+  if (diff < 60)    return 'Just now';
+  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+  return `${Math.floor(diff / 86400)}d ago`;
 }
 
 // =============================================
-// Insert a notification (called internally)
+// Recent Activity
+// =============================================
+async function loadRecentActivity() {
+  const { data: app } = await supabaseClient
+    .from('applications')
+    .select('*')
+    .eq('user_id', currentSession.user.id)
+    .single();
+
+  const list  = document.getElementById('activityList');
+  const badge = document.getElementById('activityBadge');
+  if (!list || !app) return;
+
+  const events = [];
+
+  events.push({ dot: 'blue', title: 'Account created and email verified', time: 'On signup' });
+
+  if (app.profile_complete)  events.push({ dot: 'teal',   title: 'Profile information saved',        time: 'Profile section' });
+  if (app.identity_complete) events.push({ dot: 'teal',   title: 'Identity documents submitted',     time: 'Identity section' });
+  if (app.payment_complete)  events.push({ dot: 'teal',   title: 'Payment method added',             time: 'Payment section' });
+
+  if (app.opportunity_selected) events.push({
+    dot: 'blue',
+    title: `Opportunity selected: ${app.selected_opportunity || ''}`,
+    time: 'Opportunities section'
+  });
+
+  if (app.application_status === 'in_review') events.push({
+    dot: 'orange', title: 'Application submitted — under review', time: 'Awaiting admin review'
+  });
+  if (app.application_status === 'approved') events.push({
+    dot: 'green', title: 'Application approved ✓', time: 'Review complete'
+  });
+  if (app.application_status === 'rejected') events.push({
+    dot: 'orange', title: 'Application not accepted — resubmission required', time: 'Review complete'
+  });
+
+  if (!app.profile_complete && !app.identity_complete && !app.payment_complete) {
+    events.push({ dot: 'orange', title: 'Profile setup incomplete — action needed', time: 'Complete all sections' });
+  }
+
+  if (badge) badge.textContent = `${events.length} actions`;
+
+  list.innerHTML = events.map(ev => `
+    <li class="activity-item">
+      <span class="act-dot ${ev.dot}"></span>
+      <div class="act-info">
+        <div class="act-title">${ev.title}</div>
+        <div class="act-time">${ev.time}</div>
+      </div>
+    </li>`).join('');
+}
+
+// =============================================
+// Add notification
 // =============================================
 async function addNotification(title, description, type = 'info') {
   await supabaseClient.from('notifications').insert({
-    user_id:     currentSession.user.id,
+    user_id: currentSession.user.id,
     title,
     description,
     type
@@ -271,7 +336,6 @@ function prefillProfileForm(profile, email) {
   set('equipment',   profile.available_equipment);
   set('phone',       profile.phone_number);
 
-  // Trigger state dropdown if country pre-filled
   if (profile.country) {
     document.getElementById('country')?.dispatchEvent(new Event('change'));
     setTimeout(() => set('state', profile.state), 50);
@@ -284,8 +348,8 @@ function prefillProfileForm(profile, email) {
 document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('personalForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const f    = e.target;
-    const btn  = f.querySelector('button[type="submit"]');
+    const f   = e.target;
+    const btn = f.querySelector('button[type="submit"]');
     btn.textContent = 'Saving…';
     btn.disabled    = true;
 
@@ -319,28 +383,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (error) {
       alert('Error saving profile: ' + error.message);
-    } else {
-      // Mark complete in applications table
-      await supabaseClient
-        .from('applications')
-        .update({ profile_complete: true })
-        .eq('user_id', currentSession.user.id);
-
-      await addNotification('Profile complete', 'Your profile information has been saved.', 'success');
-      await refreshDashboard();
-
-      btn.textContent = '✓ Saved!';
-      setTimeout(() => { btn.textContent = 'Save Profile'; btn.disabled = false; }, 2000);
+      btn.textContent = 'Save Profile';
+      btn.disabled    = false;
       return;
     }
 
-    btn.textContent = 'Save Profile';
-    btn.disabled    = false;
+    await supabaseClient
+      .from('applications')
+      .update({ profile_complete: true })
+      .eq('user_id', currentSession.user.id);
+
+    await addNotification('Profile complete', 'Your profile information has been saved.', 'success');
+    await refreshDashboard();
+    await loadRecentActivity();
+
+    btn.textContent = '✓ Saved!';
+    setTimeout(() => { btn.textContent = 'Save Profile'; btn.disabled = false; }, 2000);
   });
 
-  // =============================================
-  // Identity form submit (step 3 button)
-  // =============================================
+  // Identity submit
   document.getElementById('submitIdentityBtn')?.addEventListener('click', async () => {
     const btn = document.getElementById('submitIdentityBtn');
     btn.textContent = 'Submitting…';
@@ -360,12 +421,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     await addNotification('Identity submitted', 'Your identity documents have been submitted for review.', 'info');
     await refreshDashboard();
+    await loadRecentActivity();
     btn.textContent = '✓ Submitted';
   });
 
-  // =============================================
-  // Payment form submit
-  // =============================================
+  // Payment submit
   document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const btn = e.target.querySelector('button[type="submit"]');
@@ -379,21 +439,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (error) {
       alert('Error: ' + error.message);
-    } else {
-      await addNotification('Payment method saved', 'Your payment details have been recorded.', 'success');
-      await refreshDashboard();
-      btn.textContent = '✓ Saved!';
-      setTimeout(() => { btn.textContent = 'Save Payment Details'; btn.disabled = false; }, 2000);
+      btn.textContent = 'Save Payment Details';
+      btn.disabled    = false;
       return;
     }
 
-    btn.textContent = 'Save Payment Details';
-    btn.disabled    = false;
+    await addNotification('Payment method saved', 'Your payment details have been recorded.', 'success');
+    await refreshDashboard();
+    await loadRecentActivity();
+    btn.textContent = '✓ Saved!';
+    setTimeout(() => { btn.textContent = 'Save Payment Details'; btn.disabled = false; }, 2000);
   });
 
-  // =============================================
-  // Opportunities / final submit
-  // =============================================
+  // Opportunity submit
   document.getElementById('opportunityForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const selected = e.target.elements['opportunity'].value;
@@ -422,27 +480,25 @@ document.addEventListener('DOMContentLoaded', () => {
 
     await addNotification(
       'Application submitted',
-      'Your application is now under review. We\'ll notify you by email of the outcome.',
+      "Your application is now under review. We'll notify you by email of the outcome.",
       'info'
     );
+
+    lockFormsAfterSubmission();
     await refreshDashboard();
+    await loadRecentActivity();
   });
 });
 
 // =============================================
-// Card navigation helper
+// Card navigation
 // =============================================
 function navigateTo(view) {
   document.querySelectorAll('#sidebarNav a').forEach(l => l.classList.remove('active'));
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-
   const link = document.querySelector(`#sidebarNav a[data-view="${view}"]`);
   if (link) link.classList.add('active');
-
-  const viewEl = document.getElementById(`view-${view}`);
-  if (viewEl) viewEl.classList.add('active');
-
-  // Scroll to top of content
+  document.getElementById(`view-${view}`)?.classList.add('active');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
@@ -505,9 +561,10 @@ function idGoTo(step) {
 // =============================================
 async function logout() {
   await supabaseClient.auth.signOut({ scope: 'local' });
-  // Clear all supabase keys from localStorage to prevent stale sessions
   Object.keys(localStorage)
     .filter(k => k.startsWith('sb-'))
     .forEach(k => localStorage.removeItem(k));
   window.location.replace('login.html');
 }
+
+document.getElementById('logoutBtn')?.addEventListener('click', logout);
