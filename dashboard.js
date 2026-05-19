@@ -487,7 +487,10 @@ function idGoTo(step) {
 // Logout
 // =============================================
 async function logout() {
-  await supabaseClient.auth.signOut();
+  await supabaseClient.auth.signOut({ scope: 'local' });
+  // Clear all supabase keys from localStorage to prevent stale sessions
+  Object.keys(localStorage)
+    .filter(k => k.startsWith('sb-'))
+    .forEach(k => localStorage.removeItem(k));
   window.location.replace('login.html');
 }
-document.getElementById('logoutBtn')?.addEventListener('click', logout);
