@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - Apex Remote Services</title>
+  <link href="favicon.ico" rel="icon">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -43,6 +44,8 @@
       gap: 16px;
       box-shadow: 0 2px 16px rgba(19,99,198,.06);
     }
+
+    .act-dot.green { background: #22c55e; }
 
     .sidebar-toggle {
       width: 40px; height: 40px;
@@ -587,49 +590,20 @@
 
     <div class="home-grid">
       <div class="card-panel">
-        <div class="panel-title">
-          Recent Activity
-          <span class="badge-count">—</span>
-        </div>
-        <ul class="activity-list">
-          <li class="activity-item">
-            <span class="act-dot blue"></span>
-            <div class="act-info">
-              <div class="act-title">Account created successfully</div>
-              <div class="act-time">Today · Just now</div>
-            </div>
-          </li>
-          <li class="activity-item">
-            <span class="act-dot teal"></span>
-            <div class="act-info">
-              <div class="act-title">Email address verified</div>
-              <div class="act-time">Today · A moment ago</div>
-            </div>
-          </li>
-          <li class="activity-item">
-            <span class="act-dot orange"></span>
-            <div class="act-info">
-              <div class="act-title">Profile setup incomplete — action needed</div>
-              <div class="act-time">Today</div>
-            </div>
-          </li>
-        </ul>
-      </div>
-      <div class="card-panel">
-        <div class="panel-title">
-          Notifications
-          <span class="badge-count" id="notifBadge">—</span>
-        </div>
-        <ul class="notif-list" id="notifList">
-          <li class="notif-item">
-            <div class="notif-body">
-              <div class="notif-title">Loading notifications…</div>
-            </div>
-          </li>
-        </ul>
-      </div>
-    </div>
+  <div class="panel-title">
+    Recent Activity
+    <span class="badge-count" id="activityBadge">—</span>
   </div>
+  <ul class="activity-list" id="activityList">
+    <li class="activity-item">
+      <span class="act-dot blue"></span>
+      <div class="act-info">
+        <div class="act-title">Loading activity…</div>
+      </div>
+    </li>
+  </ul>
+</div>
+    </div>
 
   <!-- PROFILE -->
   <div class="view" id="view-profile">
