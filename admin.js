@@ -364,6 +364,23 @@ function applyFilter(filter) {
 }
 
 // =============================================
+// Admin card navigation
+// =============================================
+function adminNavigate(view, filter) {
+  document.querySelectorAll('#adminNav a').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+
+  const link = document.querySelector(`#adminNav a[data-view="${view}"]`);
+  if (link) link.classList.add('active');
+  document.getElementById(`view-${view}`)?.classList.add('active');
+
+  document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+  const tab = document.querySelector(`.filter-tab[data-filter="${filter}"]`);
+  if (tab) tab.classList.add('active');
+  applyFilter(filter);
+}
+
+// =============================================
 // Bind all events
 // =============================================
 function bindEvents() {
