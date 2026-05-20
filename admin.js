@@ -40,47 +40,29 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load all applicants
 // =============================================
 async function loadAllData() {
-  const { data: profiles, error } = await supabaseClient
+  // First get profiles
+  const { data: profiles, error: profileError } = await supabaseClient
     .from('profiles')
-    .select(`
-      user_id, 
-      first_name, 
-      last_name, 
-      email,
-      country, 
-      city, 
-      phone_number, 
-      education_level,
-      employment_status, 
-      available_equipment,
-      additional_languages, 
-      experience, 
-      referral_code,
-      created_at, 
-      is_admin,
-      applications (
-        application_status, 
-        profile_complete, 
-        identity_complete,
-        payment_complete, 
-        opportunity_selected, 
-        selected_opportunity,
-        updated_at
-      )
-    `)
+    .select('*')
     .eq('is_admin', false)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Load error:', error);
-    // Optional: Show user-friendly message
-    alert('Failed to load applicants. Please check your database relationships.');
+  if (profileError) {
+    console.error('Profile load error:', profileError);
     return;
   }
 
-  allApplicants = (profiles || []).map(p => ({
-    ...p,
-    app: p.applications?.[0] || {}
+  // Then get all applications
+  const userIds = profiles.map(p => p.user_id);
+  const { data: applications } = await supabaseClient
+    .from('applications')
+    .select('*')
+    .in('user_id', userIds);
+
+  // Merge them
+  allApplicants = profiles.map(profile => ({
+    ...profile,
+    app: applications.find(app => app.user_id === profile.user_id) || {}
   }));
 
   renderStats();
