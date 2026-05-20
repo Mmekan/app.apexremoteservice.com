@@ -426,19 +426,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Identity submit
   document.getElementById('submitIdentityBtn')?.addEventListener('click', async () => {
-    const btn = document.getElementById('submitIdentityBtn');
-    btn.textContent = 'Submitting…';
-    btn.disabled    = true;
-
-    document.getElementById('submitIdentityBtn')?.addEventListener('click', async () => {
   const btn = document.getElementById('submitIdentityBtn');
   btn.textContent = 'Uploading…';
   btn.disabled    = true;
 
-  // Upload identity documents
-  const frontFile  = document.querySelector('#idStep2 input[type="file"]:nth-child(1)')?.files?.[0];
-  const backFile   = document.querySelector('#idStep2 input[type="file"]:nth-child(2)')?.files?.[0];
-  const selfieFile = document.querySelector('#idStep2 input[type="file"]:nth-child(3)')?.files?.[0];
+  // Upload identity documents using the IDs we added to the HTML
+  const frontFile  = document.getElementById('idFront')?.files?.[0];
+  const backFile   = document.getElementById('idBack')?.files?.[0];
+  const selfieFile = document.getElementById('idSelfie')?.files?.[0];
 
   if (frontFile)  await uploadFile(frontFile,  'identity');
   if (backFile)   await uploadFile(backFile,   'identity');
