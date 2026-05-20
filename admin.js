@@ -327,30 +327,35 @@ async function approveApplicant() {
   if (!activeApplicant) return;
   const btn = document.getElementById('btnApprove');
   btn.textContent = 'Approving…';
-  btn.disabled    = true;
+  btn.disabled = true;
 
   const { error } = await supabaseClient
     .from('applications')
-    .update({ application_status: 'approved', updated_at: new Date().toISOString() })
+    .update({ 
+      application_status: 'approved', 
+      updated_at: new Date().toISOString() 
+    })
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
     alert('Error: ' + error.message);
     btn.textContent = '✓ Approve';
-    btn.disabled    = false;
+    btn.disabled = false;
     return;
   }
 
   await supabaseClient.from('notifications').insert({
-    user_id:     activeApplicant.user_id,
-    title:       'Application approved! 🎉',
+    user_id: activeApplicant.user_id,
+    title: 'Application approved! 🎉',
     description: 'Congratulations! Your application has been reviewed and approved. Welcome to the Apex Remote Services network. Check your email for further details.',
-    type:        'success'
+    type: 'success'
   });
 
   await sendNotificationEmail('approved', activeApplicant);
+
   closeModal();
-  await loadAllData();
+  await loadAllData();        // Refresh list
+  window.location.reload();   // Full reload so admin sees updated UI
 }
 
 // =============================================
@@ -358,35 +363,46 @@ async function approveApplicant() {
 // =============================================
 async function confirmReject() {
   if (!activeApplicant) return;
-  const btn    = document.getElementById('btnRejectConfirm');
+  const btn = document.getElementById('btnRejectConfirm');
   const reason = document.getElementById('rejectMessage').value.trim();
+
   btn.textContent = 'Rejecting…';
-  btn.disabled    = true;
+  btn.disabled = true;
 
   const { error } = await supabaseClient
     .from('applications')
-    .update({ application_status: 'rejected', updated_at: new Date().toISOString() })
+    .update({ 
+      application_status: 'rejected', 
+      updated_at: new Date().toISOString(),
+      // Important: Allow resubmission
+      profile_complete: false,
+      identity_complete: false,
+      payment_complete: false,
+      opportunity_selected: false
+    })
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
     alert('Error: ' + error.message);
     btn.textContent = 'Confirm Rejection';
-    btn.disabled    = false;
+    btn.disabled = false;
     return;
   }
 
   await supabaseClient.from('notifications').insert({
-    user_id:     activeApplicant.user_id,
-    title:       'Application not accepted',
+    user_id: activeApplicant.user_id,
+    title: 'Application not accepted',
     description: reason
-      ? `Your application was not accepted. Reason: ${reason} — Please review your application and resubmit within 72 hours. Keep in mind that you have a limited number of revisions, so review carefully before resubmitting.`
-      : 'Your application was reviewed but could not be accepted at this time. Please review your application and resubmit within 72 hours. Keep in mind that you have a limited number of revisions, so review carefully before resubmitting.',
+      ? `Your application was not accepted. Reason: ${reason} — Please review your application and resubmit within 72 hours.`
+      : 'Your application was reviewed but could not be accepted at this time. Please review and resubmit.',
     type: 'warn'
   });
 
   await sendNotificationEmail('rejected', activeApplicant);
+
   closeModal();
   await loadAllData();
+  window.location.reload();   // Full reload for admin
 }
 
 // =============================================
