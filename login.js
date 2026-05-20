@@ -1,6 +1,3 @@
-// =============================================
-// Supabase init
-// =============================================
 const { createClient } = window.supabase;
 const supabaseClient = createClient(
   'https://glwncvlpnchxcsngsuhe.supabase.co',
@@ -8,10 +5,35 @@ const supabaseClient = createClient(
 );
 
 // =============================================
-// On load: clear broken tokens, redirect if valid session
+// Handle auth redirects from email links
 // =============================================
 (async () => {
-  // Remove any malformed localStorage tokens
+  // Check if this page load came from an email link
+  const hash = window.location.hash;
+  const params = new URLSearchParams(hash.replace('#', '?'));
+  const type = params.get('type');
+  const accessToken = params.get('access_token');
+
+  // Password recovery link — go to reset page
+  if (type === 'recovery' && accessToken) {
+    window.location.replace('reset-password.html' + window.location.hash);
+    return;
+  }
+
+  // Email confirmation link — let Supabase exchange the token
+  if (type === 'signup' && accessToken) {
+    // Supabase auto-exchanges hash tokens, just wait briefly then redirect
+    await new Promise(r => setTimeout(r, 800));
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (session) {
+      // Clear the hash from URL cleanly
+      history.replaceState(null, '', window.location.pathname);
+      await redirectByRole(session);
+    }
+    return;
+  }
+
+  // Normal page load — clear broken tokens first
   Object.keys(localStorage)
     .filter(k => k.startsWith('sb-'))
     .forEach(k => {
@@ -21,17 +43,21 @@ const supabaseClient = createClient(
       } catch { localStorage.removeItem(k); }
     });
 
+  // Redirect if already logged in
   const { data: { session } } = await supabaseClient.auth.getSession();
-
   if (session?.user?.email_confirmed_at) {
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('is_admin')
-      .eq('user_id', session.user.id)
-      .single();
-    window.location.replace(profile?.is_admin ? 'admin.html' : 'dashboard.html');
+    await redirectByRole(session);
   }
 })();
+
+async function redirectByRole(session) {
+  const { data: profile } = await supabaseClient
+    .from('profiles')
+    .select('is_admin')
+    .eq('user_id', session.user.id)
+    .single();
+  window.location.replace(profile?.is_admin ? 'admin.html' : 'dashboard.html');
+}
 
 // =============================================
 // Tab switching
@@ -41,28 +67,24 @@ let currentMode = 'login';
 function switchTab(mode) {
   currentMode = mode;
   const isSignup = mode === 'signup';
-
   document.getElementById('signupFields').style.display = isSignup ? 'grid'  : 'none';
   document.getElementById('forgotRow').style.display    = isSignup ? 'none'  : 'block';
   document.getElementById('btnText').textContent        = isSignup ? 'Create Account' : 'Sign In';
   document.getElementById('firstName').required         = isSignup;
   document.getElementById('lastName').required          = isSignup;
-
   document.getElementById('tabLogin').classList.toggle('tab-active',  !isSignup);
   document.getElementById('tabSignup').classList.toggle('tab-active',  isSignup);
-
   document.getElementById('password').value = '';
 }
 
 // =============================================
-// Password visibility toggle
+// Password visibility
 // =============================================
 function togglePassword() {
   const input   = document.getElementById('password');
   const icon    = document.getElementById('eyeIcon');
   const showing = input.type === 'text';
   input.type    = showing ? 'password' : 'text';
-
   icon.innerHTML = showing
     ? `<path stroke-linecap="round" stroke-linejoin="round"
          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
@@ -83,7 +105,6 @@ function togglePassword() {
 // =============================================
 async function handleSubmit(e) {
   e.preventDefault();
-
   const btn     = document.getElementById('submitBtn');
   const btnText = document.getElementById('btnText');
   const spinner = document.getElementById('btnSpinner');
@@ -104,9 +125,7 @@ async function handleSubmit(e) {
           }
         }
       });
-
       if (error) { alert(error.message); return; }
-
       alert('Signup successful! Check your email to confirm your account before signing in.');
       switchTab('login');
       return;
@@ -117,16 +136,8 @@ async function handleSubmit(e) {
       email:    document.getElementById('email').value.trim(),
       password: document.getElementById('password').value
     });
-
     if (error) { alert(error.message); return; }
-
-    const { data: profile } = await supabaseClient
-      .from('profiles')
-      .select('is_admin')
-      .eq('user_id', data.user.id)
-      .single();
-
-    window.location.replace(profile?.is_admin ? 'admin.html' : 'dashboard.html');
+    await redirectByRole(data.session);
 
   } catch (err) {
     console.error(err);
@@ -144,11 +155,9 @@ async function handleSubmit(e) {
 async function forgotPassword() {
   const email = document.getElementById('email').value.trim();
   if (!email) { alert('Please enter your email address first.'); return; }
-
   const { error } = await supabaseClient.auth.resetPasswordForEmail(email, {
-    redirectTo: `${window.location.origin}/reset-password.html`
+    redirectTo: `${window.location.origin}/login.html`
   });
-
   if (error) { alert(error.message); return; }
   alert('Password reset email sent. Check your inbox.');
 }
