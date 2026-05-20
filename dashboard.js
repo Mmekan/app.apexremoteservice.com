@@ -424,40 +424,22 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => { btn.textContent = 'Save Profile'; btn.disabled = false; }, 2000);
   });
 
-  // Identity submit
+    // Identity submit
   document.getElementById('submitIdentityBtn')?.addEventListener('click', async () => {
-  const btn = document.getElementById('submitIdentityBtn');
-  btn.textContent = 'Uploading…';
-  btn.disabled    = true;
+    const btn = document.getElementById('submitIdentityBtn');
+    btn.textContent = 'Uploading…';
+    btn.disabled = true;
 
-  // Upload identity documents using the IDs we added to the HTML
-  const frontFile  = document.getElementById('idFront')?.files?.[0];
-  const backFile   = document.getElementById('idBack')?.files?.[0];
-  const selfieFile = document.getElementById('idSelfie')?.files?.[0];
+    // Upload identity documents
+    const frontFile  = document.getElementById('idFront')?.files?.[0];
+    const backFile   = document.getElementById('idBack')?.files?.[0];
+    const selfieFile = document.getElementById('idSelfie')?.files?.[0];
 
-  if (frontFile)  await uploadFile(frontFile,  'identity');
-  if (backFile)   await uploadFile(backFile,   'identity');
-  if (selfieFile) await uploadFile(selfieFile, 'selfie');
+    if (frontFile)  await uploadFile(frontFile,  'identity');
+    if (backFile)   await uploadFile(backFile,   'identity');
+    if (selfieFile) await uploadFile(selfieFile, 'selfie');
 
-  btn.textContent = 'Submitting…';
-
-  const { error } = await supabaseClient
-    .from('applications')
-    .update({ identity_complete: true })
-    .eq('user_id', currentSession.user.id);
-
-  if (error) {
-    alert('Error: ' + error.message);
-    btn.textContent = 'Submit for Verification';
-    btn.disabled    = false;
-    return;
-  }
-
-  await addNotification('Identity submitted', 'Your identity documents have been submitted for review.', 'info');
-  await refreshDashboard();
-  await loadRecentActivity();
-  btn.textContent = '✓ Submitted';
-});
+    btn.textContent = 'Submitting…';
 
     const { error } = await supabaseClient
       .from('applications')
@@ -467,16 +449,18 @@ document.addEventListener('DOMContentLoaded', () => {
     if (error) {
       alert('Error: ' + error.message);
       btn.textContent = 'Submit for Verification';
-      btn.disabled    = false;
+      btn.disabled = false;
       return;
     }
 
     await addNotification('Identity submitted', 'Your identity documents have been submitted for review.', 'info');
     await refreshDashboard();
     await loadRecentActivity();
-    btn.textContent = '✓ Submitted';
-  });
 
+    btn.textContent = '✓ Submitted';
+    btn.disabled = false;
+  });
+  
   // Payment submit
   document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
