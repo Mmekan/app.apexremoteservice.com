@@ -769,18 +769,18 @@
       </div>
       <div class="sub-form" id="idStep2">
         <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">Front of Document</label>
-            <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Back of Document</label>
-            <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
-          </div>
-          <div class="col-12">
-            <label class="form-label">Selfie with Document</label>
-            <input type="file" class="form-control" accept=".jpg,.jpeg,.png">
-          </div>
+            <div class="col-md-6">
+          <label class="form-label">Front of Document</label>
+          <input type="file" id="idFront" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Back of Document</label>
+          <input type="file" id="idBack" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Selfie with Document</label>
+          <input type="file" id="idSelfie" class="form-control" accept=".jpg,.jpeg,.png">
+        </div>
           <div class="col-12 mt-2 d-flex gap-3">
             <button type="button" class="btn-primary-apex" style="background:var(--light);color:var(--dark);box-shadow:none;" onclick="idGoTo(1)">← Back</button>
             <button type="button" class="btn-primary-apex" onclick="idGoTo(3)">Continue →</button>
