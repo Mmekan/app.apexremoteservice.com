@@ -43,21 +43,40 @@ async function loadAllData() {
   const { data: profiles, error } = await supabaseClient
     .from('profiles')
     .select(`
-      user_id, first_name, last_name, email,
-      country, city, phone_number, education_level,
-      employment_status, available_equipment,
-      additional_languages, experience, referral_code,
-      created_at, is_admin,
+      user_id, 
+      first_name, 
+      last_name, 
+      email,
+      country, 
+      city, 
+      phone_number, 
+      education_level,
+      employment_status, 
+      available_equipment,
+      additional_languages, 
+      experience, 
+      referral_code,
+      created_at, 
+      is_admin,
       applications (
-        application_status, profile_complete, identity_complete,
-        payment_complete, opportunity_selected, selected_opportunity,
+        application_status, 
+        profile_complete, 
+        identity_complete,
+        payment_complete, 
+        opportunity_selected, 
+        selected_opportunity,
         updated_at
       )
     `)
     .eq('is_admin', false)
     .order('created_at', { ascending: false });
 
-  if (error) { console.error('Load error:', error); return; }
+  if (error) {
+    console.error('Load error:', error);
+    // Optional: Show user-friendly message
+    alert('Failed to load applicants. Please check your database relationships.');
+    return;
+  }
 
   allApplicants = (profiles || []).map(p => ({
     ...p,
@@ -68,7 +87,6 @@ async function loadAllData() {
   renderRecentTable();
   renderApplicantsTable(allApplicants);
 }
-
 // =============================================
 // Stats
 // =============================================
