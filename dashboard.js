@@ -66,7 +66,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('userGreet').textContent = displayName;
 
   prefillProfileForm(profile, session.user.email);
-  await refreshDashboard();
+  await refreshDashboard();        // ← Fixed
   await loadNotifications();
   await loadRecentActivity();
 });
@@ -112,8 +112,8 @@ async function refreshDashboard() {
     document.getElementById('ovStatusValue').textContent = 'Approved';
     document.getElementById('ovStatusSub').textContent   = '✓ Application accepted';
   } else if (rejected) {
-    document.getElementById('ovStatusValue').textContent = 'Rejected';
-    document.getElementById('ovStatusSub').textContent   = 'See notification for details';
+  document.getElementById('ovStatusValue').textContent = 'Rejected';
+  document.getElementById('ovStatusSub').textContent = 'You can now edit and resubmit your application';
   } else {
     document.getElementById('ovStatusValue').textContent = 'Not Submitted';
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
@@ -137,8 +137,11 @@ async function refreshDashboard() {
   }
 
   // Lock forms if submitted or approved
-  if (inReview || approved) {
+  if (approved || inReview) {
     lockFormsAfterSubmission();
+  } 
+  else if (rejected) {
+    unlockFormsForResubmission();   // New function
   }
 
   // Review banner
@@ -189,10 +192,16 @@ async function refreshDashboard() {
 function lockFormsAfterSubmission() {
   const lock = (el) => {
     if (!el) return;
-    el.disabled         = true;
-    el.style.opacity    = '0.6';
-    el.style.cursor     = 'not-allowed';
-    el.textContent      = '✓ Submitted';
+    
+    // Save original text BEFORE changing it
+    if (!el.hasAttribute('data-original-text')) {
+      el.setAttribute('data-original-text', el.textContent);
+    }
+
+    el.disabled      = true;
+    el.style.opacity = '0.6';
+    el.style.cursor  = 'not-allowed';
+    el.textContent   = '✓ Submitted';
   };
 
   lock(document.querySelector('#personalForm button[type="submit"]'));
@@ -202,7 +211,37 @@ function lockFormsAfterSubmission() {
   document.querySelectorAll('#opportunityForm input[type="radio"]')
     .forEach(r => r.disabled = true);
 }
+// =============================================
+// Unlock forms when application is rejected
+// =============================================
+function unlockFormsForResubmission() {
+  const unlock = (el) => {
+    if (!el) return;
+    el.disabled = false;
+    el.style.opacity = '1';
+    el.style.cursor = 'pointer';
+    
+    const originalText = el.getAttribute('data-original-text');
+    if (originalText) el.textContent = originalText;
+  };
 
+  unlock(document.querySelector('#personalForm button[type="submit"]'));
+  unlock(document.getElementById('submitIdentityBtn'));
+  unlock(document.querySelector('#paymentForm button[type="submit"]'));
+
+  // Enable radios
+  document.querySelectorAll('#opportunityForm input[type="radio"]')
+    .forEach(r => r.disabled = false);
+
+  // Reset main submit button
+  const submitBtn = document.getElementById('submitApplicationBtn');
+  if (submitBtn) {
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Submit Application';
+    submitBtn.style.opacity = '1';
+    submitBtn.style.cursor = 'pointer';
+  }
+}
 // =============================================
 // Load notifications
 // =============================================
