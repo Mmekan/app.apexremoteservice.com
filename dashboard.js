@@ -11,6 +11,23 @@ let currentSession = null;
 let currentProfile = null;
 
 // =============================================
+// Upload file to Supabase Storage
+// =============================================
+async function uploadFile(file, folder) {
+  if (!file) return null;
+  const ext      = file.name.split('.').pop();
+  const filename = `${folder}_${Date.now()}.${ext}`;
+  const path     = `${currentSession.user.id}/${folder}/${filename}`;
+
+  const { error } = await supabaseClient.storage
+    .from('documents')
+    .upload(path, file, { upsert: true });
+
+  if (error) { console.error('Upload error:', error); return null; }
+  return path;
+}
+
+// =============================================
 // Boot
 // =============================================
 document.addEventListener('DOMContentLoaded', async () => {
@@ -357,6 +374,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const firstName = nameParts[0] || '';
     const lastName  = nameParts.slice(1).join(' ') || '';
 
+        // Upload CV if provided
+    const cvFile = f.elements['cv']?.files?.[0];
+    if (cvFile) {
+      await uploadFile(cvFile, 'cv');
+    }
+
     const { error } = await supabaseClient
       .from('profiles')
       .update({
@@ -406,6 +429,40 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = document.getElementById('submitIdentityBtn');
     btn.textContent = 'Submitting…';
     btn.disabled    = true;
+
+    document.getElementById('submitIdentityBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('submitIdentityBtn');
+  btn.textContent = 'Uploading…';
+  btn.disabled    = true;
+
+  // Upload identity documents
+  const frontFile  = document.querySelector('#idStep2 input[type="file"]:nth-child(1)')?.files?.[0];
+  const backFile   = document.querySelector('#idStep2 input[type="file"]:nth-child(2)')?.files?.[0];
+  const selfieFile = document.querySelector('#idStep2 input[type="file"]:nth-child(3)')?.files?.[0];
+
+  if (frontFile)  await uploadFile(frontFile,  'identity');
+  if (backFile)   await uploadFile(backFile,   'identity');
+  if (selfieFile) await uploadFile(selfieFile, 'selfie');
+
+  btn.textContent = 'Submitting…';
+
+  const { error } = await supabaseClient
+    .from('applications')
+    .update({ identity_complete: true })
+    .eq('user_id', currentSession.user.id);
+
+  if (error) {
+    alert('Error: ' + error.message);
+    btn.textContent = 'Submit for Verification';
+    btn.disabled    = false;
+    return;
+  }
+
+  await addNotification('Identity submitted', 'Your identity documents have been submitted for review.', 'info');
+  await refreshDashboard();
+  await loadRecentActivity();
+  btn.textContent = '✓ Submitted';
+});
 
     const { error } = await supabaseClient
       .from('applications')
