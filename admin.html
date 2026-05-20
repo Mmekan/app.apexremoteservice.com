@@ -44,15 +44,19 @@
     .brand-dot { width: 8px; height: 8px; background: var(--secondary); border-radius: 50%; display: inline-block; }
 
     /* SIDEBAR */
-    .apex-sidebar {
-      position: fixed; top: var(--navbar-h); left: 0;
-      width: var(--sidebar-w); height: calc(100vh - var(--navbar-h));
-      background: var(--dark); display: flex; flex-direction: column;
-      padding: 32px 16px 24px; z-index: 150;
-      transition: transform var(--transition); overflow-y: auto;
+        .apex-sidebar {
+      position: fixed;
+      top: var(--navbar-h);
+      left: 0;
+      width: var(--sidebar-w);
+      height: calc(100vh - var(--navbar-h));
+      background: var(--dark);
       display: flex;
       flex-direction: column;
-      height: calc(100vh - var(--navbar-h));
+      padding: 32px 16px 24px;
+      z-index: 150;
+      transition: transform var(--transition);
+      overflow-y: auto;
     }
     .sidebar-label {
       font-size: 0.68rem; font-weight: 600; letter-spacing: .12em;
@@ -77,9 +81,6 @@
       border-top: 1px solid rgba(255,255,255,.08);
     }
     .nav-icon { width: 22px; height: 22px; flex-shrink: 0; opacity: .8; }
-    .sidebar-footer {
-      margin-top: auto; padding-top: 20px;
-      border-top: 1px solid rgba(255,255,255,.08);
     }
     .logout-btn {
       display: flex; align-items: center; gap: 10px;
