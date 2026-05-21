@@ -242,20 +242,17 @@ function unlockFormsForResubmission() {
     el.disabled = false;
     el.style.opacity = '1';
     el.style.cursor = 'pointer';
-    
-    const originalText = el.getAttribute('data-original-text');
-    if (originalText) el.textContent = originalText;
+    const original = el.getAttribute('data-original-text');
+    if (original) el.textContent = original;
   };
 
   unlock(document.querySelector('#personalForm button[type="submit"]'));
   unlock(document.getElementById('submitIdentityBtn'));
   unlock(document.querySelector('#paymentForm button[type="submit"]'));
 
-  // Enable radios
   document.querySelectorAll('#opportunityForm input[type="radio"]')
     .forEach(r => r.disabled = false);
 
-  // Reset main submit button
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
