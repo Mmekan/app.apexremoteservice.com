@@ -75,14 +75,52 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Refresh overview cards + submit button state
 // =============================================
 async function refreshDashboard() {
-  const { data: app } = await supabaseClient
+  let app = null;
+
+  const { data, error } = await supabaseClient
     .from('applications')
     .select('*')
     .eq('user_id', currentSession.user.id)
     .single();
 
-  if (!app) return;
+  if (error && error.code === 'PGRST116') {
+    // No row found → create default application row
+    const { data: newApp, error: insertError } = await supabaseClient
+      .from('applications')
+      .insert({
+        user_id: currentSession.user.id,
+        application_status: 'draft',
+        profile_complete: false,
+        identity_complete: false,
+        payment_complete: false,
+        opportunity_selected: false
+      })
+      .select()
+      .single();
 
+    if (insertError) {
+      console.error('Failed to create application row:', insertError);
+    } else {
+      app = newApp;
+    }
+  } else if (data) {
+    app = data;
+  }
+
+  if (!app) {
+    // Fallback UI for new user
+    document.getElementById('ovProfileValue').textContent = '0%';
+    document.getElementById('ovProfileSub').textContent = 'Start completing your profile';
+    document.getElementById('ovVerifValue').textContent = 'Pending';
+    document.getElementById('ovVerifSub').textContent = 'Submit your ID docs';
+    document.getElementById('ovPaymentValue').textContent = 'Not Set';
+    document.getElementById('ovPaymentSub').textContent = 'Add a payment method';
+    document.getElementById('ovStatusValue').textContent = 'Not Started';
+    document.getElementById('ovStatusSub').textContent = 'Complete all sections to apply';
+    return;
+  }
+
+  // === Existing logic (only runs if app exists) ===
   const profileDone  = !!app.profile_complete;
   const identityDone = !!app.identity_complete;
   const paymentDone  = !!app.payment_complete;
@@ -100,9 +138,9 @@ async function refreshDashboard() {
     pct === 0   ? 'Start completing your profile' :
     `${stepsComplete} of ${stepsTotal} sections done`;
 
-  document.getElementById('ovVerifValue').textContent   = identityDone ? 'Verified'              : 'Pending';
-  document.getElementById('ovVerifSub').textContent     = identityDone ? '✓ Identity confirmed'   : 'Submit your ID docs';
-  document.getElementById('ovPaymentValue').textContent = paymentDone  ? 'Added'                 : 'Not Set';
+  document.getElementById('ovVerifValue').textContent   = identityDone ? 'Verified' : 'Pending';
+  document.getElementById('ovVerifSub').textContent     = identityDone ? '✓ Identity confirmed' : 'Submit your ID docs';
+  document.getElementById('ovPaymentValue').textContent = paymentDone  ? 'Added' : 'Not Set';
   document.getElementById('ovPaymentSub').textContent   = paymentDone  ? '✓ Payment method saved' : 'Add a payment method';
 
   if (inReview) {
@@ -112,8 +150,8 @@ async function refreshDashboard() {
     document.getElementById('ovStatusValue').textContent = 'Approved';
     document.getElementById('ovStatusSub').textContent   = '✓ Application accepted';
   } else if (rejected) {
-  document.getElementById('ovStatusValue').textContent = 'Rejected';
-  document.getElementById('ovStatusSub').textContent = 'You can now edit and resubmit your application';
+    document.getElementById('ovStatusValue').textContent = 'Rejected';
+    document.getElementById('ovStatusSub').textContent   = 'You can now edit and resubmit your application';
   } else {
     document.getElementById('ovStatusValue').textContent = 'Not Submitted';
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
@@ -122,10 +160,10 @@ async function refreshDashboard() {
   // Submit button state
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
-    const allDone       = profileDone && identityDone && paymentDone;
+    const allDone = profileDone && identityDone && paymentDone;
     const alreadyLocked = ['in_review', 'approved'].includes(app.application_status);
 
-    submitBtn.disabled    = !allDone || alreadyLocked;
+    submitBtn.disabled = !allDone || alreadyLocked;
     submitBtn.textContent =
       approved  ? '✓ Application Approved' :
       inReview  ? 'Application Submitted'  :
@@ -136,19 +174,18 @@ async function refreshDashboard() {
     submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';
   }
 
-  // Lock forms if submitted or approved
+  // Lock / Unlock logic
   if (approved || inReview) {
     lockFormsAfterSubmission();
-  } 
-  else if (rejected) {
-    unlockFormsForResubmission();   // New function
+  } else if (rejected) {
+    unlockFormsForResubmission();
   }
 
   // Review banner
   const reviewBanner = document.getElementById('reviewBanner');
   if (reviewBanner) {
     reviewBanner.style.display = (inReview || approved || rejected) ? 'flex' : 'none';
-
+ 
     if (inReview) {
       reviewBanner.style.background = 'linear-gradient(135deg,var(--primary),var(--secondary))';
       reviewBanner.innerHTML = `
