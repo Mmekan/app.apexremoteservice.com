@@ -134,13 +134,15 @@ async function refreshDashboard() {
   } else if (rejected) {
     document.getElementById('ovStatusValue').textContent = 'Rejected';
     document.getElementById('ovStatusSub').textContent   = 'You can now edit and resubmit your application';
-  } if (currentProfile) {
-    prefillProfileForm(currentProfile, currentSession.user.email);
+    
+    // Reload profile data for editing
+    if (currentProfile) {
+      prefillProfileForm(currentProfile, currentSession.user.email);
+    }
   } else {
     document.getElementById('ovStatusValue').textContent = 'Not Submitted';
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
   }
-  
 
   // Submit button state
   const submitBtn = document.getElementById('submitApplicationBtn');
@@ -149,7 +151,7 @@ async function refreshDashboard() {
     const alreadyLocked = ['in_review', 'approved'].includes(app.application_status);
 
     submitBtn.disabled = !allDone || alreadyLocked;
-    submitBtn.textContent = 
+    submitBtn.textContent =
       approved ? '✓ Application Approved' :
       inReview ? 'Application Submitted' :
       rejected ? 'Resubmit Application' :
@@ -165,15 +167,14 @@ async function refreshDashboard() {
   } else if (rejected) {
     unlockFormsForResubmission();
   } else {
-    // New users or draft → make sure everything is unlocked
-    unlockFormsForResubmission();
+    unlockFormsForResubmission(); // New users / draft
   }
 
   // Review banner
   const reviewBanner = document.getElementById('reviewBanner');
   if (reviewBanner) {
     reviewBanner.style.display = (inReview || approved || rejected) ? 'flex' : 'none';
-     
+    
     if (inReview) {
       reviewBanner.style.background = 'linear-gradient(135deg,var(--primary),var(--secondary))';
       reviewBanner.innerHTML = `
@@ -254,7 +255,7 @@ function unlockFormsForResubmission() {
   unlockBtn(document.getElementById('submitIdentityBtn'));
   unlockBtn(document.querySelector('#paymentForm button[type="submit"]'));
 
-  // Enable all form inputs and selects
+  // Enable all form fields
   const personalForm = document.getElementById('personalForm');
   if (personalForm) {
     personalForm.querySelectorAll('input, select, textarea').forEach(el => {
@@ -282,6 +283,7 @@ function unlockFormsForResubmission() {
     submitBtn.style.cursor = 'pointer';
   }
 }
+
 // =============================================
 // Notification Icon Helper
 // =============================================
