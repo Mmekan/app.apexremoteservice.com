@@ -335,33 +335,29 @@
   flex-direction: column; 
   gap: 8px; 
 }
-
-.notif-item {
+    .notif-item {
   display: flex;
-  gap: 14px;
-  padding: 16px 14px;
+  gap: 12px;
+  padding: 14px 12px;
   border-radius: 12px;
-  transition: all var(--transition);
+  transition: background var(--transition);
   align-items: flex-start;
-  background: #fff;
-  border: 1px solid rgba(19,99,198,0.08);
 }
 
 .notif-item:hover { 
   background: var(--light); 
-  border-color: rgba(19,99,198,0.15);
 }
 
 .notif-icon {
-  width: 34px; 
-  height: 34px;
+  width: 34px; height: 34px;
   border-radius: 10px;
-  display: flex; 
-  align-items: center; 
-  justify-content: center;
+  display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
-  margin-top: 2px;
 }
+
+.notif-icon.info { background: rgba(19,99,198,.1); color: var(--primary); }
+.notif-icon.success { background: rgba(34,197,94,.12); color: #22c55e; }
+.notif-icon.warn { background: rgba(249,115,22,.1); color: #f97316; }
 
 .notif-body { 
   flex: 1; 
@@ -369,39 +365,30 @@
 }
 
 .notif-title { 
-  font-size: 0.88rem; 
-  font-weight: 600; 
+  font-size: 0.86rem; 
+  font-weight: 500; 
   color: var(--dark); 
-  margin-bottom: 4px;
 }
 
 .notif-desc { 
-  font-size: 0.8rem; 
-  color: #64748b; 
-  line-height: 1.6; 
+  font-size: 0.78rem; 
+  color: #8a95ab; 
+  margin-top: 4px; 
+  line-height: 1.55; 
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
-  max-height: 95px;           /* Limits height */
-  overflow-y: auto;           /* Scroll only if very long */
-  scrollbar-width: thin;
-  scrollbar-color: #cbd5e1 #f1f5f9;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 8px;
 }
 
 .notif-time { 
-  font-size: 0.73rem; 
-  color: #94a3b8; 
+  font-size: 0.72rem; 
+  color: #c0c9d8; 
   margin-top: 6px; 
 }
 
-/* Nice scrollbar for long reasons */
-.notif-desc::-webkit-scrollbar {
-  width: 4px;
-}
-.notif-desc::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 20px;
-}
     /* ── FORM PANEL ── */
     .form-panel {
       background: #fff;
