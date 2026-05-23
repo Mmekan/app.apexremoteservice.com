@@ -272,7 +272,7 @@ async function loadNotifications() {
     .order('created_at', { ascending: false })
     .limit(10);
 
-  const list  = document.getElementById('notifList');
+  const list = document.getElementById('notifList');
   const badge = document.getElementById('notifBadge');
   if (!list) return;
 
@@ -295,32 +295,18 @@ async function loadNotifications() {
       <div class="notif-icon ${n.type}">${notifIcon(n.type)}</div>
       <div class="notif-body">
         <div class="notif-title">${n.title}</div>
-        <div class="notif-desc">${n.description || ''}</div>
+        <div class="notif-desc" style="line-height:1.45;">${n.description || ''}</div>
         <div class="notif-time">${timeAgo(n.created_at)}</div>
       </div>
     </li>`).join('');
 
+  // Mark as read
   await supabaseClient
     .from('notifications')
     .update({ read: true })
     .eq('user_id', currentSession.user.id)
     .eq('read', false);
 }
-
-function notifIcon(type) {
-  if (type === 'success') return `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
-  if (type === 'warn')    return `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
-  return `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`;
-}
-
-function timeAgo(ts) {
-  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (diff < 60)    return 'Just now';
-  if (diff < 3600)  return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
 // =============================================
 // Recent Activity
 // =============================================
