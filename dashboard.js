@@ -295,12 +295,15 @@ async function loadNotifications() {
       <div class="notif-icon ${n.type}">${notifIcon(n.type)}</div>
       <div class="notif-body">
         <div class="notif-title">${n.title}</div>
-        <div class="notif-desc" style="line-height:1.45;">${n.description || ''}</div>
+        <!-- Improved description for long rejection reasons -->
+        <div class="notif-desc" style="line-height:1.5; white-space: pre-wrap; word-break: break-word;">
+          ${n.description || ''}
+        </div>
         <div class="notif-time">${timeAgo(n.created_at)}</div>
       </div>
     </li>`).join('');
 
-  // Mark as read
+  // Mark all as read
   await supabaseClient
     .from('notifications')
     .update({ read: true })
