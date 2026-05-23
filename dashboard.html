@@ -333,7 +333,7 @@
   list-style: none; 
   display: flex; 
   flex-direction: column; 
-  gap: 10px; 
+  gap: 8px; 
 }
 
 .notif-item {
@@ -341,15 +341,15 @@
   gap: 14px;
   padding: 16px 14px;
   border-radius: 12px;
-  background: #fff;
-  border: 1px solid rgba(19,99,198,0.08);
   transition: all var(--transition);
   align-items: flex-start;
+  background: #fff;
+  border: 1px solid rgba(19,99,198,0.08);
 }
 
 .notif-item:hover { 
   background: var(--light); 
-  border-color: rgba(19,99,198,0.18);
+  border-color: rgba(19,99,198,0.15);
 }
 
 .notif-icon {
@@ -372,7 +372,7 @@
   font-size: 0.88rem; 
   font-weight: 600; 
   color: var(--dark); 
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .notif-desc { 
@@ -382,7 +382,10 @@
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
-  /* No max-height, no scrollbar - full text visible */
+  max-height: 95px;           /* Limits height */
+  overflow-y: auto;           /* Scroll only if very long */
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 #f1f5f9;
 }
 
 .notif-time { 
@@ -391,17 +394,13 @@
   margin-top: 6px; 
 }
 
-/* Mobile adjustments */
-@media (max-width: 768px) {
-  .notif-item {
-    padding: 14px 12px;
-    gap: 12px;
-  }
-  
-  .notif-desc {
-    font-size: 0.78rem;
-    line-height: 1.55;
-  }
+/* Nice scrollbar for long reasons */
+.notif-desc::-webkit-scrollbar {
+  width: 4px;
+}
+.notif-desc::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 20px;
 }
     /* ── FORM PANEL ── */
     .form-panel {
