@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await refreshDashboard();        // ← Fixed
   await loadNotifications();
   await loadRecentActivity();
+  navigateTo('home');
 });
 
 // =============================================
@@ -128,14 +129,19 @@ async function refreshDashboard() {
     document.getElementById('ovStatusValue').textContent = 'Approved';
     document.getElementById('ovStatusSub').textContent   = '✓ Application accepted';
   } else if (rejected) {
-    document.getElementById('ovStatusValue').textContent = 'Rejected';
-    document.getElementById('ovStatusSub').textContent   = 'You can now edit and resubmit your application';
-    
-    // FORCE reload profile data for editing
-    if (currentProfile) {
-      prefillProfileForm(currentProfile, currentSession.user.email);
-    }
-  } else {
+  document.getElementById('ovStatusValue').textContent = 'Rejected';
+  document.getElementById('ovStatusSub').textContent =
+    'You can now edit and resubmit your application';
+
+  unlockFormsForResubmission();
+
+  // 🔴 THIS IS THE IMPORTANT LINE
+  navigateTo('profile');
+
+  if (currentProfile) {
+    prefillProfileForm(currentProfile, currentSession.user.email);
+  }
+}else {
     document.getElementById('ovStatusValue').textContent = 'Not Submitted';
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
   }
