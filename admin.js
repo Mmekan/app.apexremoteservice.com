@@ -354,11 +354,12 @@ async function approveApplicant() {
 
   await sendNotificationEmail('approved', activeApplicant);
 
+  // Show feedback in button before reload
+  btn.textContent = '✓ Approved!';
   closeModal();
 
-  // Show brief success message then reload to overview
-  document.querySelector('.section-title').textContent = '✓ Application approved!';
-  setTimeout(() => window.location.replace('admin.html'), 1200);
+  // Flash confirmation on page then reload
+  showActionFeedback('✓ Application approved!', '#22c55e');
 }
 
 async function confirmReject() {
@@ -372,11 +373,11 @@ async function confirmReject() {
   const { error } = await supabaseClient
     .from('applications')
     .update({
-      application_status: 'rejected',
-      updated_at:         new Date().toISOString(),
-      profile_complete:   false,
-      identity_complete:  false,
-      payment_complete:   false,
+      application_status:   'rejected',
+      updated_at:           new Date().toISOString(),
+      profile_complete:     false,
+      identity_complete:    false,
+      payment_complete:     false,
       opportunity_selected: false
     })
     .eq('user_id', activeApplicant.user_id);
@@ -388,22 +389,44 @@ async function confirmReject() {
     return;
   }
 
+  // Include the admin's reason in the notification so user sees it
+  const notifDesc = reason
+    ? `Your application was not accepted. Reason: "${reason}" — Please review carefully and resubmit within 72 hours. Note: you have a limited number of revisions.`
+    : 'Your application was reviewed but could not be accepted at this time. Please review and resubmit within 72 hours. Note: you have a limited number of revisions.';
+
   await supabaseClient.from('notifications').insert({
     user_id:     activeApplicant.user_id,
     title:       'Application not accepted',
-    description: reason
-      ? `Your application was not accepted. Reason: ${reason} — Please review your application and resubmit within 72 hours.`
-      : 'Your application was reviewed but could not be accepted at this time. Please review and resubmit.',
-    type: 'warn'
+    description: notifDesc,
+    type:        'warn'
   });
 
   await sendNotificationEmail('rejected', activeApplicant);
 
+  btn.textContent = '✗ Rejected';
   closeModal();
 
-  // Brief message then reload to overview
-  document.querySelector('.section-title').textContent = 'Application rejected.';
-  setTimeout(() => window.location.replace('admin.html'), 1200);
+  showActionFeedback('Application rejected.', '#ef4444');
+}
+
+// =============================================
+// Feedback banner then reload
+// =============================================
+function showActionFeedback(message, color) {
+  // Create overlay feedback
+  const banner = document.createElement('div');
+  banner.style.cssText = `
+    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
+    background:${color}; color:#fff; padding:20px 40px;
+    border-radius:16px; font-family:'Sora',sans-serif;
+    font-size:1.1rem; font-weight:700;
+    box-shadow:0 8px 32px rgba(0,0,0,.2);
+    z-index:9999; animation:fadeIn .2s ease;
+  `;
+  banner.textContent = message;
+  document.body.appendChild(banner);
+
+  setTimeout(() => window.location.replace('admin.html'), 1500);
 }
 
 // =============================================
