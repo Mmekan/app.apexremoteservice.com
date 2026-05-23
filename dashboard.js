@@ -231,6 +231,7 @@ function lockFormsAfterSubmission() {
 // Unlock forms when application is rejected
 // =============================================
 function unlockFormsForResubmission() {
+  // Unlock all buttons
   const unlockBtn = (el) => {
     if (!el) return;
     el.disabled = false;
@@ -244,9 +245,14 @@ function unlockFormsForResubmission() {
   unlockBtn(document.getElementById('submitIdentityBtn'));
   unlockBtn(document.querySelector('#paymentForm button[type="submit"]'));
 
-  // Unlock ALL form fields
-  document.querySelectorAll('#personalForm input, #personalForm select, #personalForm textarea').forEach(el => el.disabled = false);
-  document.querySelectorAll('#paymentForm input, #paymentForm select, #paymentForm textarea').forEach(el => el.disabled = false);
+  // Unlock ALL inputs, selects, textareas
+  document.querySelectorAll('#personalForm input, #personalForm select, #personalForm textarea').forEach(el => {
+    el.disabled = false;
+  });
+
+  document.querySelectorAll('#paymentForm input, #paymentForm select, #paymentForm textarea').forEach(el => {
+    el.disabled = false;
+  });
 
   // Unlock opportunity radios
   document.querySelectorAll('#opportunityForm input[type="radio"]').forEach(r => r.disabled = false);
