@@ -328,56 +328,56 @@ async function approveApplicant() {
   if (!activeApplicant) return;
   const btn = document.getElementById('btnApprove');
   btn.textContent = 'Approving…';
-  btn.disabled    = true;
+  btn.disabled = true;
 
   const { error } = await supabaseClient
     .from('applications')
-    .update({
-      application_status: 'approved',
-      updated_at:         new Date().toISOString()
+    .update({ 
+      application_status: 'approved', 
+      updated_at: new Date().toISOString() 
     })
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
     alert('Error: ' + error.message);
     btn.textContent = '✓ Approve';
-    btn.disabled    = false;
+    btn.disabled = false;
     return;
   }
 
   await supabaseClient.from('notifications').insert({
-    user_id:     activeApplicant.user_id,
-    title:       'Application approved! 🎉',
+    user_id: activeApplicant.user_id,
+    title: 'Application approved! 🎉',
     description: 'Congratulations! Your application has been reviewed and approved. Welcome to the Apex Remote Services network. Check your email for further details.',
-    type:        'success'
+    type: 'success'
   });
 
   await sendNotificationEmail('approved', activeApplicant);
 
-  // Show feedback in button before reload
-  btn.textContent = '✓ Approved!';
   closeModal();
-
-  // Flash confirmation on page then reload
-  showActionFeedback('✓ Application approved!', '#22c55e');
+  showActionFeedback('✓ Application approved successfully!', '#22c55e');
 }
 
+// =============================================
+// Reject
+// =============================================
 async function confirmReject() {
   if (!activeApplicant) return;
-  const btn    = document.getElementById('btnRejectConfirm');
+
+  const btn = document.getElementById('btnRejectConfirm');
   const reason = document.getElementById('rejectMessage').value.trim();
 
   btn.textContent = 'Rejecting…';
-  btn.disabled    = true;
+  btn.disabled = true;
 
   const { error } = await supabaseClient
     .from('applications')
     .update({
-      application_status:   'rejected',
-      updated_at:           new Date().toISOString(),
-      profile_complete:     false,
-      identity_complete:    false,
-      payment_complete:     false,
+      application_status: 'rejected',
+      updated_at: new Date().toISOString(),
+      profile_complete: false,
+      identity_complete: false,
+      payment_complete: false,
       opportunity_selected: false
     })
     .eq('user_id', activeApplicant.user_id);
@@ -385,48 +385,46 @@ async function confirmReject() {
   if (error) {
     alert('Error: ' + error.message);
     btn.textContent = 'Confirm Rejection';
-    btn.disabled    = false;
+    btn.disabled = false;
     return;
   }
 
-  // Include the admin's reason in the notification so user sees it
-  const notifDesc = reason
-    ? `Your application was not accepted. Reason: "${reason}" — Please review carefully and resubmit within 72 hours. Note: you have a limited number of revisions.`
-    : 'Your application was reviewed but could not be accepted at this time. Please review and resubmit within 72 hours. Note: you have a limited number of revisions.';
+  // Improved notification with reason
+  const notifDesc = reason 
+    ? `Your application was not accepted. Reason from reviewer: "${reason}". Please review your documents and information carefully, then resubmit within 72 hours. You have a limited number of resubmissions.`
+    : 'Your application was reviewed but could not be accepted at this time. Please review and resubmit within 72 hours.';
 
   await supabaseClient.from('notifications').insert({
-    user_id:     activeApplicant.user_id,
-    title:       'Application not accepted',
+    user_id: activeApplicant.user_id,
+    title: 'Application Not Accepted',
     description: notifDesc,
-    type:        'warn'
+    type: 'warn'
   });
 
   await sendNotificationEmail('rejected', activeApplicant);
 
   btn.textContent = '✗ Rejected';
   closeModal();
-
-  showActionFeedback('Application rejected.', '#ef4444');
+  showActionFeedback('Application rejected successfully.', '#ef4444');
 }
-
 // =============================================
 // Feedback banner then reload
 // =============================================
 function showActionFeedback(message, color) {
-  // Create overlay feedback
   const banner = document.createElement('div');
   banner.style.cssText = `
-    position:fixed; top:50%; left:50%; transform:translate(-50%,-50%);
-    background:${color}; color:#fff; padding:20px 40px;
-    border-radius:16px; font-family:'Sora',sans-serif;
-    font-size:1.1rem; font-weight:700;
-    box-shadow:0 8px 32px rgba(0,0,0,.2);
-    z-index:9999; animation:fadeIn .2s ease;
+    position:fixed; top:80px; left:50%; transform:translateX(-50%);
+    background:${color}; color:#fff; padding:16px 32px; border-radius:12px;
+    font-family:'Sora',sans-serif; font-size:1rem; font-weight:600;
+    box-shadow:0 10px 30px rgba(0,0,0,.25); z-index:9999;
   `;
   banner.textContent = message;
   document.body.appendChild(banner);
 
-  setTimeout(() => window.location.replace('admin.html'), 1500);
+  setTimeout(() => {
+    banner.style.opacity = '0';
+    setTimeout(() => window.location.reload(), 600);
+  }, 1400);
 }
 
 // =============================================
