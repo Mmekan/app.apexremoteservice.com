@@ -328,30 +328,40 @@
     .act-title { font-size: 0.88rem; font-weight: 500; color: var(--dark); }
     .act-time  { font-size: 0.76rem; color: #a0aec0; margin-top: 2px; }
 
-    .notif-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
-    .notif-item {
+    /* ==================== NOTIFICATIONS ==================== */
+.notif-list { 
+  list-style: none; 
+  display: flex; 
+  flex-direction: column; 
+  gap: 10px; 
+}
+
+.notif-item {
   display: flex;
-  gap: 12px;
-  padding: 14px 12px;
+  gap: 14px;
+  padding: 16px 14px;
   border-radius: 12px;
-  transition: background var(--transition);
+  background: #fff;
+  border: 1px solid rgba(19,99,198,0.08);
+  transition: all var(--transition);
   align-items: flex-start;
 }
 
 .notif-item:hover { 
   background: var(--light); 
+  border-color: rgba(19,99,198,0.18);
 }
 
 .notif-icon {
-  width: 34px; height: 34px;
+  width: 34px; 
+  height: 34px;
   border-radius: 10px;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
   flex-shrink: 0;
+  margin-top: 2px;
 }
-
-.notif-icon.info { background: rgba(19,99,198,.1); color: var(--primary); }
-.notif-icon.success { background: rgba(34,197,94,.12); color: #22c55e; }
-.notif-icon.warn { background: rgba(249,115,22,.1); color: #f97316; }
 
 .notif-body { 
   flex: 1; 
@@ -359,28 +369,39 @@
 }
 
 .notif-title { 
-  font-size: 0.86rem; 
-  font-weight: 500; 
+  font-size: 0.88rem; 
+  font-weight: 600; 
   color: var(--dark); 
+  margin-bottom: 5px;
 }
 
 .notif-desc { 
-  font-size: 0.78rem; 
-  color: #8a95ab; 
-  margin-top: 4px; 
-  line-height: 1.55; 
+  font-size: 0.8rem; 
+  color: #64748b; 
+  line-height: 1.6; 
   white-space: pre-wrap;
   word-break: break-word;
   overflow-wrap: break-word;
-  max-height: 120px;
-  overflow-y: auto;
-  padding-right: 8px;
+  /* No max-height, no scrollbar - full text visible */
 }
 
 .notif-time { 
-  font-size: 0.72rem; 
-  color: #c0c9d8; 
+  font-size: 0.73rem; 
+  color: #94a3b8; 
   margin-top: 6px; 
+}
+
+/* Mobile adjustments */
+@media (max-width: 768px) {
+  .notif-item {
+    padding: 14px 12px;
+    gap: 12px;
+  }
+  
+  .notif-desc {
+    font-size: 0.78rem;
+    line-height: 1.55;
+  }
 }
     /* ── FORM PANEL ── */
     .form-panel {
