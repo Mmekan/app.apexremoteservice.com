@@ -134,10 +134,13 @@ async function refreshDashboard() {
   } else if (rejected) {
     document.getElementById('ovStatusValue').textContent = 'Rejected';
     document.getElementById('ovStatusSub').textContent   = 'You can now edit and resubmit your application';
+  } if (currentProfile) {
+    prefillProfileForm(currentProfile, currentSession.user.email);
   } else {
     document.getElementById('ovStatusValue').textContent = 'Not Submitted';
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
   }
+  
 
   // Submit button state
   const submitBtn = document.getElementById('submitApplicationBtn');
@@ -237,7 +240,8 @@ function lockFormsAfterSubmission() {
 // Unlock forms when application is rejected
 // =============================================
 function unlockFormsForResubmission() {
-  const unlock = (el) => {
+  // Unlock buttons
+  const unlockBtn = (el) => {
     if (!el) return;
     el.disabled = false;
     el.style.opacity = '1';
@@ -246,13 +250,30 @@ function unlockFormsForResubmission() {
     if (original) el.textContent = original;
   };
 
-  unlock(document.querySelector('#personalForm button[type="submit"]'));
-  unlock(document.getElementById('submitIdentityBtn'));
-  unlock(document.querySelector('#paymentForm button[type="submit"]'));
+  unlockBtn(document.querySelector('#personalForm button[type="submit"]'));
+  unlockBtn(document.getElementById('submitIdentityBtn'));
+  unlockBtn(document.querySelector('#paymentForm button[type="submit"]'));
 
+  // Enable all form inputs and selects
+  const personalForm = document.getElementById('personalForm');
+  if (personalForm) {
+    personalForm.querySelectorAll('input, select, textarea').forEach(el => {
+      el.disabled = false;
+    });
+  }
+
+  const paymentForm = document.getElementById('paymentForm');
+  if (paymentForm) {
+    paymentForm.querySelectorAll('input, select, textarea').forEach(el => {
+      el.disabled = false;
+    });
+  }
+
+  // Enable opportunity radios
   document.querySelectorAll('#opportunityForm input[type="radio"]')
     .forEach(r => r.disabled = false);
 
+  // Reset main submit button
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
@@ -366,7 +387,7 @@ async function loadRecentActivity() {
     dot: 'green', title: 'Application approved ✓', time: 'Review complete'
   });
   if (app.application_status === 'rejected') events.push({
-    dot: 'orange', title: 'Application not accepted — resubmission required', time: 'Review complete'
+    dot: 'orange', title: 'Application rejected — resubmission allowed', time: 'Review complete'
   });
 
   if (!app.profile_complete && !app.identity_complete && !app.payment_complete) {
