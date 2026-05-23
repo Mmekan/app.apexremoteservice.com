@@ -69,22 +69,21 @@ document.addEventListener('DOMContentLoaded', async () => {
   await refreshDashboard();        // ← Fixed
   await loadNotifications();
   await loadRecentActivity();
-  navigateTo('home');
 });
 
 // =============================================
 // Refresh overview cards + submit button state
 // =============================================
 async function refreshDashboard() {
-  let { data: app } = await supabaseClient
+  let { data: app, error } = await supabaseClient
     .from('applications')
     .select('*')
     .eq('user_id', currentSession.user.id)
     .single();
 
-  // Create record if none exists
+  // Create application row for new users
   if (!app) {
-    const { data: newApp } = await supabaseClient
+    const { data: newApp, error: insertError } = await supabaseClient
       .from('applications')
       .insert({
         user_id: currentSession.user.id,
@@ -96,6 +95,11 @@ async function refreshDashboard() {
       })
       .select()
       .single();
+
+    if (insertError) {
+      console.error('Failed to create application record:', insertError);
+      return;
+    }
     app = newApp;
   }
 
@@ -110,7 +114,6 @@ async function refreshDashboard() {
   const stepsComplete = [profileDone, identityDone, paymentDone].filter(Boolean).length;
   const pct           = Math.round((stepsComplete / stepsTotal) * 100);
 
-  // Update Overview Cards
   document.getElementById('ovProfileValue').textContent = pct + '%';
   document.getElementById('ovProfileSub').textContent =
     pct === 100 ? '✓ All sections complete' :
@@ -129,48 +132,45 @@ async function refreshDashboard() {
     document.getElementById('ovStatusValue').textContent = 'Approved';
     document.getElementById('ovStatusSub').textContent   = '✓ Application accepted';
   } else if (rejected) {
-  document.getElementById('ovStatusValue').textContent = 'Rejected';
-  document.getElementById('ovStatusSub').textContent =
-    'You can now edit and resubmit your application';
-
-  unlockFormsForResubmission();
-
-  // 🔴 THIS IS THE IMPORTANT LINE
-  navigateTo('profile');
-
-  if (currentProfile) {
-    prefillProfileForm(currentProfile, currentSession.user.email);
-  }
-}else {
+    document.getElementById('ovStatusValue').textContent = 'Rejected';
+    document.getElementById('ovStatusSub').textContent   = 'You can now edit and resubmit your application';
+  } else {
     document.getElementById('ovStatusValue').textContent = 'Not Submitted';
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
   }
 
-  // Button & Form State
+  // Submit button state
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     const allDone = profileDone && identityDone && paymentDone;
     const alreadyLocked = ['in_review', 'approved'].includes(app.application_status);
 
     submitBtn.disabled = !allDone || alreadyLocked;
-    submitBtn.textContent = rejected ? 'Resubmit Application' :
-                            approved ? '✓ Application Approved' :
-                            inReview ? 'Application Submitted' :
-                            allDone ? 'Submit Application' : 'Complete all sections to unlock';
+    submitBtn.textContent = 
+      approved ? '✓ Application Approved' :
+      inReview ? 'Application Submitted' :
+      rejected ? 'Resubmit Application' :
+      allDone ? 'Submit Application' : 'Complete all sections to unlock';
+
+    submitBtn.style.opacity = alreadyLocked ? '0.6' : '1';
+    submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';
   }
 
-  // Final Lock/Unlock Decision
+  // Lock / Unlock logic
   if (approved || inReview) {
     lockFormsAfterSubmission();
+  } else if (rejected) {
+    unlockFormsForResubmission();
   } else {
-    unlockFormsForResubmission();   // Covers rejected + draft + new users
+    // New users or draft → make sure everything is unlocked
+    unlockFormsForResubmission();
   }
 
   // Review banner
   const reviewBanner = document.getElementById('reviewBanner');
   if (reviewBanner) {
     reviewBanner.style.display = (inReview || approved || rejected) ? 'flex' : 'none';
-    
+     
     if (inReview) {
       reviewBanner.style.background = 'linear-gradient(135deg,var(--primary),var(--secondary))';
       reviewBanner.innerHTML = `
@@ -237,8 +237,7 @@ function lockFormsAfterSubmission() {
 // Unlock forms when application is rejected
 // =============================================
 function unlockFormsForResubmission() {
-  // Unlock all buttons
-  const unlockBtn = (el) => {
+  const unlock = (el) => {
     if (!el) return;
     el.disabled = false;
     el.style.opacity = '1';
@@ -247,23 +246,13 @@ function unlockFormsForResubmission() {
     if (original) el.textContent = original;
   };
 
-  unlockBtn(document.querySelector('#personalForm button[type="submit"]'));
-  unlockBtn(document.getElementById('submitIdentityBtn'));
-  unlockBtn(document.querySelector('#paymentForm button[type="submit"]'));
+  unlock(document.querySelector('#personalForm button[type="submit"]'));
+  unlock(document.getElementById('submitIdentityBtn'));
+  unlock(document.querySelector('#paymentForm button[type="submit"]'));
 
-  // Unlock ALL inputs, selects, textareas
-  document.querySelectorAll('#personalForm input, #personalForm select, #personalForm textarea').forEach(el => {
-    el.disabled = false;
-  });
+  document.querySelectorAll('#opportunityForm input[type="radio"]')
+    .forEach(r => r.disabled = false);
 
-  document.querySelectorAll('#paymentForm input, #paymentForm select, #paymentForm textarea').forEach(el => {
-    el.disabled = false;
-  });
-
-  // Unlock opportunity radios
-  document.querySelectorAll('#opportunityForm input[type="radio"]').forEach(r => r.disabled = false);
-
-  // Main submit button
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
@@ -272,30 +261,6 @@ function unlockFormsForResubmission() {
     submitBtn.style.cursor = 'pointer';
   }
 }
-// =============================================
-// Notification Icon Helper
-// =============================================
-function notifIcon(type) {
-  if (type === 'success') {
-    return `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`;
-  }
-  if (type === 'warn') {
-    return `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`;
-  }
-  return `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`;
-}
-
-// =============================================
-// Time Ago Helper
-// =============================================
-function timeAgo(ts) {
-  const diff = Math.floor((Date.now() - new Date(ts)) / 1000);
-  if (diff < 60) return 'Just now';
-  if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
-  if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
-  return `${Math.floor(diff / 86400)}d ago`;
-}
-
 // =============================================
 // Load notifications
 // =============================================
@@ -377,7 +342,7 @@ async function loadRecentActivity() {
     dot: 'green', title: 'Application approved ✓', time: 'Review complete'
   });
   if (app.application_status === 'rejected') events.push({
-    dot: 'orange', title: 'Application rejected — resubmission allowed', time: 'Review complete'
+    dot: 'orange', title: 'Application not accepted — resubmission required', time: 'Review complete'
   });
 
   if (!app.profile_complete && !app.identity_complete && !app.payment_complete) {
