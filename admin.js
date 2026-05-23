@@ -239,7 +239,7 @@ async function loadApplicantDocuments(userId) {
 
   docsEl.innerHTML = '<div style="color:#a0aec0;font-size:.82rem;">Loading documents…</div>';
 
-  const folders = ['cv', 'identity', 'selfie'];
+  const folders  = ['cv', 'identity', 'selfie'];
   const allFiles = [];
 
   for (const folder of folders) {
@@ -249,15 +249,18 @@ async function loadApplicantDocuments(userId) {
 
     if (files && files.length > 0) {
       for (const file of files) {
-        const { data: urlData } = supabaseClient.storage
+        // Use createSignedUrl instead of getPublicUrl for private buckets
+        const { data: signedData } = await supabaseClient.storage
           .from('documents')
-          .getPublicUrl(`${userId}/${folder}/${file.name}`);
+          .createSignedUrl(`${userId}/${folder}/${file.name}`, 3600); // 1 hour expiry
 
-        allFiles.push({
-          name:   file.name,
-          folder: folder,
-          url:    urlData.publicUrl
-        });
+        if (signedData?.signedUrl) {
+          allFiles.push({
+            name:   file.name,
+            folder: folder,
+            url:    signedData.signedUrl
+          });
+        }
       }
     }
   }
@@ -273,8 +276,7 @@ async function loadApplicantDocuments(userId) {
       padding:6px 12px;border-radius:8px;
       background:rgba(19,99,198,.08);color:var(--primary);
       font-size:.8rem;font-weight:600;text-decoration:none;
-      border:1px solid rgba(19,99,198,.15);margin:4px 4px 4px 0;
-      transition:all .2s;">
+      border:1px solid rgba(19,99,198,.15);margin:4px 4px 4px 0;">
       <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
         <polyline points="14,2 14,8 20,8"/>
@@ -282,7 +284,6 @@ async function loadApplicantDocuments(userId) {
       ${f.folder}: ${f.name}
     </a>`).join('');
 }
-
 function closeModal() {
   document.getElementById('modalOverlay').classList.remove('open');
   activeApplicant = null;
@@ -321,63 +322,61 @@ async function sendNotificationEmail(type, applicant) {
 }
 
 // =============================================
-// Approve
+// Approve + Reject Applicants
 // =============================================
 async function approveApplicant() {
   if (!activeApplicant) return;
   const btn = document.getElementById('btnApprove');
   btn.textContent = 'Approving…';
-  btn.disabled = true;
+  btn.disabled    = true;
 
   const { error } = await supabaseClient
     .from('applications')
-    .update({ 
-      application_status: 'approved', 
-      updated_at: new Date().toISOString() 
+    .update({
+      application_status: 'approved',
+      updated_at:         new Date().toISOString()
     })
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
     alert('Error: ' + error.message);
     btn.textContent = '✓ Approve';
-    btn.disabled = false;
+    btn.disabled    = false;
     return;
   }
 
   await supabaseClient.from('notifications').insert({
-    user_id: activeApplicant.user_id,
-    title: 'Application approved! 🎉',
+    user_id:     activeApplicant.user_id,
+    title:       'Application approved! 🎉',
     description: 'Congratulations! Your application has been reviewed and approved. Welcome to the Apex Remote Services network. Check your email for further details.',
-    type: 'success'
+    type:        'success'
   });
 
   await sendNotificationEmail('approved', activeApplicant);
 
   closeModal();
-  await loadAllData();        // Refresh list
-  window.location.reload();   // Full reload so admin sees updated UI
+
+  // Show brief success message then reload to overview
+  document.querySelector('.section-title').textContent = '✓ Application approved!';
+  setTimeout(() => window.location.replace('admin.html'), 1200);
 }
 
-// =============================================
-// Reject
-// =============================================
 async function confirmReject() {
   if (!activeApplicant) return;
-  const btn = document.getElementById('btnRejectConfirm');
+  const btn    = document.getElementById('btnRejectConfirm');
   const reason = document.getElementById('rejectMessage').value.trim();
 
   btn.textContent = 'Rejecting…';
-  btn.disabled = true;
+  btn.disabled    = true;
 
   const { error } = await supabaseClient
     .from('applications')
-    .update({ 
-      application_status: 'rejected', 
-      updated_at: new Date().toISOString(),
-      // Important: Allow resubmission
-      profile_complete: false,
-      identity_complete: false,
-      payment_complete: false,
+    .update({
+      application_status: 'rejected',
+      updated_at:         new Date().toISOString(),
+      profile_complete:   false,
+      identity_complete:  false,
+      payment_complete:   false,
       opportunity_selected: false
     })
     .eq('user_id', activeApplicant.user_id);
@@ -385,13 +384,13 @@ async function confirmReject() {
   if (error) {
     alert('Error: ' + error.message);
     btn.textContent = 'Confirm Rejection';
-    btn.disabled = false;
+    btn.disabled    = false;
     return;
   }
 
   await supabaseClient.from('notifications').insert({
-    user_id: activeApplicant.user_id,
-    title: 'Application not accepted',
+    user_id:     activeApplicant.user_id,
+    title:       'Application not accepted',
     description: reason
       ? `Your application was not accepted. Reason: ${reason} — Please review your application and resubmit within 72 hours.`
       : 'Your application was reviewed but could not be accepted at this time. Please review and resubmit.',
@@ -401,8 +400,10 @@ async function confirmReject() {
   await sendNotificationEmail('rejected', activeApplicant);
 
   closeModal();
-  await loadAllData();
-  window.location.reload();   // Full reload for admin
+
+  // Brief message then reload to overview
+  document.querySelector('.section-title').textContent = 'Application rejected.';
+  setTimeout(() => window.location.replace('admin.html'), 1200);
 }
 
 // =============================================
