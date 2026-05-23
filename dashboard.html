@@ -330,28 +330,58 @@
 
     .notif-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
     .notif-item {
-      display: flex;
-      gap: 12px;
-      padding: 12px 10px;
-      border-radius: 10px;
-      transition: background var(--transition);
-      align-items: flex-start;
-    }
-    .notif-item:hover { background: var(--light); }
-    .notif-icon {
-      width: 34px; height: 34px;
-      border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      flex-shrink: 0;
-    }
-    .notif-icon.info    { background: rgba(19,99,198,.1);  color: var(--primary); }
-    .notif-icon.success { background: rgba(34,197,94,.12); color: #22c55e; }
-    .notif-icon.warn    { background: rgba(249,115,22,.1); color: #f97316; }
-    .notif-body { flex: 1; }
-    .notif-title { font-size: 0.86rem; font-weight: 500; color: var(--dark); }
-    .notif-desc  { font-size: 0.78rem; color: #8a95ab; margin-top: 2px; line-height: 1.4; }
-    .notif-time  { font-size: 0.72rem; color: #c0c9d8; margin-top: 4px; }
+  display: flex;
+  gap: 12px;
+  padding: 14px 12px;
+  border-radius: 12px;
+  transition: background var(--transition);
+  align-items: flex-start;
+}
 
+.notif-item:hover { 
+  background: var(--light); 
+}
+
+.notif-icon {
+  width: 34px; height: 34px;
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.notif-icon.info { background: rgba(19,99,198,.1); color: var(--primary); }
+.notif-icon.success { background: rgba(34,197,94,.12); color: #22c55e; }
+.notif-icon.warn { background: rgba(249,115,22,.1); color: #f97316; }
+
+.notif-body { 
+  flex: 1; 
+  min-width: 0; 
+}
+
+.notif-title { 
+  font-size: 0.86rem; 
+  font-weight: 500; 
+  color: var(--dark); 
+}
+
+.notif-desc { 
+  font-size: 0.78rem; 
+  color: #8a95ab; 
+  margin-top: 4px; 
+  line-height: 1.55; 
+  white-space: pre-wrap;
+  word-break: break-word;
+  overflow-wrap: break-word;
+  max-height: 120px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+
+.notif-time { 
+  font-size: 0.72rem; 
+  color: #c0c9d8; 
+  margin-top: 6px; 
+}
     /* ── FORM PANEL ── */
     .form-panel {
       background: #fff;
