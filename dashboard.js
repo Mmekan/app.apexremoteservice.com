@@ -75,15 +75,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Refresh overview cards + submit button state
 // =============================================
 async function refreshDashboard() {
-  let { data: app, error } = await supabaseClient
+  let { data: app } = await supabaseClient
     .from('applications')
     .select('*')
     .eq('user_id', currentSession.user.id)
     .single();
 
-  // Create application row for new users
+  // Create record if none exists
   if (!app) {
-    const { data: newApp, error: insertError } = await supabaseClient
+    const { data: newApp } = await supabaseClient
       .from('applications')
       .insert({
         user_id: currentSession.user.id,
@@ -95,11 +95,6 @@ async function refreshDashboard() {
       })
       .select()
       .single();
-
-    if (insertError) {
-      console.error('Failed to create application record:', insertError);
-      return;
-    }
     app = newApp;
   }
 
@@ -114,6 +109,7 @@ async function refreshDashboard() {
   const stepsComplete = [profileDone, identityDone, paymentDone].filter(Boolean).length;
   const pct           = Math.round((stepsComplete / stepsTotal) * 100);
 
+  // Update Overview Cards
   document.getElementById('ovProfileValue').textContent = pct + '%';
   document.getElementById('ovProfileSub').textContent =
     pct === 100 ? '✓ All sections complete' :
@@ -135,7 +131,7 @@ async function refreshDashboard() {
     document.getElementById('ovStatusValue').textContent = 'Rejected';
     document.getElementById('ovStatusSub').textContent   = 'You can now edit and resubmit your application';
     
-    // Reload profile data for editing
+    // FORCE reload profile data for editing
     if (currentProfile) {
       prefillProfileForm(currentProfile, currentSession.user.email);
     }
@@ -144,30 +140,24 @@ async function refreshDashboard() {
     document.getElementById('ovStatusSub').textContent   = 'Complete all sections to apply';
   }
 
-  // Submit button state
+  // Button & Form State
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     const allDone = profileDone && identityDone && paymentDone;
     const alreadyLocked = ['in_review', 'approved'].includes(app.application_status);
 
     submitBtn.disabled = !allDone || alreadyLocked;
-    submitBtn.textContent =
-      approved ? '✓ Application Approved' :
-      inReview ? 'Application Submitted' :
-      rejected ? 'Resubmit Application' :
-      allDone ? 'Submit Application' : 'Complete all sections to unlock';
-
-    submitBtn.style.opacity = alreadyLocked ? '0.6' : '1';
-    submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';
+    submitBtn.textContent = rejected ? 'Resubmit Application' :
+                            approved ? '✓ Application Approved' :
+                            inReview ? 'Application Submitted' :
+                            allDone ? 'Submit Application' : 'Complete all sections to unlock';
   }
 
-  // Lock / Unlock logic
+  // Final Lock/Unlock Decision
   if (approved || inReview) {
     lockFormsAfterSubmission();
-  } else if (rejected) {
-    unlockFormsForResubmission();
   } else {
-    unlockFormsForResubmission(); // New users / draft
+    unlockFormsForResubmission();   // Covers rejected + draft + new users
   }
 
   // Review banner
@@ -241,7 +231,6 @@ function lockFormsAfterSubmission() {
 // Unlock forms when application is rejected
 // =============================================
 function unlockFormsForResubmission() {
-  // Unlock buttons
   const unlockBtn = (el) => {
     if (!el) return;
     el.disabled = false;
@@ -255,26 +244,14 @@ function unlockFormsForResubmission() {
   unlockBtn(document.getElementById('submitIdentityBtn'));
   unlockBtn(document.querySelector('#paymentForm button[type="submit"]'));
 
-  // Enable all form fields
-  const personalForm = document.getElementById('personalForm');
-  if (personalForm) {
-    personalForm.querySelectorAll('input, select, textarea').forEach(el => {
-      el.disabled = false;
-    });
-  }
+  // Unlock ALL form fields
+  document.querySelectorAll('#personalForm input, #personalForm select, #personalForm textarea').forEach(el => el.disabled = false);
+  document.querySelectorAll('#paymentForm input, #paymentForm select, #paymentForm textarea').forEach(el => el.disabled = false);
 
-  const paymentForm = document.getElementById('paymentForm');
-  if (paymentForm) {
-    paymentForm.querySelectorAll('input, select, textarea').forEach(el => {
-      el.disabled = false;
-    });
-  }
+  // Unlock opportunity radios
+  document.querySelectorAll('#opportunityForm input[type="radio"]').forEach(r => r.disabled = false);
 
-  // Enable opportunity radios
-  document.querySelectorAll('#opportunityForm input[type="radio"]')
-    .forEach(r => r.disabled = false);
-
-  // Reset main submit button
+  // Main submit button
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
@@ -283,7 +260,6 @@ function unlockFormsForResubmission() {
     submitBtn.style.cursor = 'pointer';
   }
 }
-
 // =============================================
 // Notification Icon Helper
 // =============================================
