@@ -532,19 +532,45 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   
   // Payment submit
-  document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
+ document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const btn = e.target.querySelector('button[type="submit"]');
+    const f   = e.target;
+    const btn = f.querySelector('button[type="submit"]');
     btn.textContent = 'Saving…';
     btn.disabled    = true;
 
-    const { error } = await supabaseClient
+    // Upload utility bill if provided
+    const utilityFile = f.querySelector('input[type="file"]')?.files?.[0];
+    if (utilityFile) await uploadFile(utilityFile, 'utility');
+
+    // Save payment details to payment_info table
+    const { error: payError } = await supabaseClient
+      .from('payment_info')
+      .upsert({
+        user_id:         currentSession.user.id,
+        bank_name:       f.elements[0].value,        // Bank Name
+        account_holder:  f.elements[1].value,        // Account Holder
+        account_number:  f.elements[2].value,        // Account Number/IBAN
+        routing_swift:   f.elements[3].value,        // Routing/SWIFT
+        ssn_tin:         f.elements[4].value,        // SSN/TIN
+        updated_at:      new Date().toISOString()
+      }, { onConflict: 'user_id' });
+
+    if (payError) {
+      alert('Error saving payment info: ' + payError.message);
+      btn.textContent = 'Save Payment Details';
+      btn.disabled    = false;
+      return;
+    }
+
+    // Mark payment complete on application
+    const { error: appError } = await supabaseClient
       .from('applications')
       .update({ payment_complete: true })
       .eq('user_id', currentSession.user.id);
 
-    if (error) {
-      alert('Error: ' + error.message);
+    if (appError) {
+      alert('Error: ' + appError.message);
       btn.textContent = 'Save Payment Details';
       btn.disabled    = false;
       return;
