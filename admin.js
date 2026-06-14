@@ -40,7 +40,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 // Load all applicants
 // =============================================
 async function loadAllData() {
-  // First get profiles
   const { data: profiles, error: profileError } = await supabaseClient
     .from('profiles')
     .select('*')
@@ -52,18 +51,21 @@ async function loadAllData() {
     return;
   }
 
-  // Then get all applications
- const { data: applications } = await supabaseClient
-    .from('applications')
-    .select('*')
-    .in('user_id', userIds);
+  if (!profiles || profiles.length === 0) {
+    allApplicants = [];
+    renderStats();
+    renderRecentTable();
+    renderApplicantsTable(allApplicants);
+    return;
+  }
 
-  const { data: payments } = await supabaseClient
-    .from('payment_info')
-    .select('*')
-    .in('user_id', userIds);
+  const userIds = profiles.map(p => p.user_id);
 
-  // Merge all three
+  const [{ data: applications }, { data: payments }] = await Promise.all([
+    supabaseClient.from('applications').select('*').in('user_id', userIds),
+    supabaseClient.from('payment_info').select('*').in('user_id', userIds)
+  ]);
+
   allApplicants = profiles.map(profile => ({
     ...profile,
     app:     applications?.find(a => a.user_id === profile.user_id) || {},
