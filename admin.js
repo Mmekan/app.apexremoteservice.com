@@ -53,16 +53,21 @@ async function loadAllData() {
   }
 
   // Then get all applications
-  const userIds = profiles.map(p => p.user_id);
-  const { data: applications } = await supabaseClient
+ const { data: applications } = await supabaseClient
     .from('applications')
     .select('*')
     .in('user_id', userIds);
 
-  // Merge them
+  const { data: payments } = await supabaseClient
+    .from('payment_info')
+    .select('*')
+    .in('user_id', userIds);
+
+  // Merge all three
   allApplicants = profiles.map(profile => ({
     ...profile,
-    app: applications.find(app => app.user_id === profile.user_id) || {}
+    app:     applications?.find(a => a.user_id === profile.user_id) || {},
+    payment: payments?.find(p => p.user_id === profile.user_id) || null
   }));
 
   renderStats();
@@ -170,19 +175,25 @@ function openModal(userId) {
 
   document.getElementById('modalName').textContent = fullName(a);
 
-  document.getElementById('modalDetails').innerHTML = [
-    ['Email',       a.email],
-    ['Country',     a.country],
-    ['City',        a.city],
-    ['Phone',       a.phone_number],
-    ['Education',   a.education_level],
-    ['Employment',  a.employment_status],
-    ['Equipment',   a.available_equipment],
-    ['Languages',   a.additional_languages || 'None'],
-    ['Referral',    a.referral_code || 'None'],
-    ['Opportunity', a.app.selected_opportunity || 'Not selected'],
-    ['Joined',      formatDate(a.created_at)],
-    ['Last Update', formatDate(a.app.updated_at)],
+ document.getElementById('modalDetails').innerHTML = [
+    ['Email',          a.email],
+    ['Country',        a.country],
+    ['City',           a.city],
+    ['Phone',          a.phone_number],
+    ['Education',      a.education_level],
+    ['Employment',     a.employment_status],
+    ['Equipment',      a.available_equipment],
+    ['Languages',      a.additional_languages || 'None'],
+    ['Referral',       a.referral_code || 'None'],
+    ['Opportunity',    a.app.selected_opportunity || 'Not selected'],
+    ['Joined',         formatDate(a.created_at)],
+    ['Last Update',    formatDate(a.app.updated_at)],
+    // ── Payment info ──
+    ['Bank Name',      a.payment?.bank_name || '—'],
+    ['Account Holder', a.payment?.account_holder || '—'],
+    ['Account No.',    a.payment?.account_number || '—'],
+    ['Routing/SWIFT',  a.payment?.routing_swift || '—'],
+    ['SSN / TIN',      a.payment?.ssn_tin || '—'],
   ].map(([label, val]) => `
     <div class="detail-item">
       <label>${label}</label>
