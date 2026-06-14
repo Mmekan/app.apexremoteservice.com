@@ -120,17 +120,7 @@
     }
     .sidebar-overlay.show { display: block; }
     
-    @media(max-width: 768px) {
-      .apex-sidebar {
-        transform: translateX(calc(-1 * var(--sidebar-w)));
-      }
-      .apex-sidebar.open {
-        transform: translateX(0);
-      }
-      .apex-main {
-        margin-left: 0;
-      }
-    }
+    
     /* MAIN */
     .apex-main {
       margin-left: var(--sidebar-w); margin-top: var(--navbar-h);
@@ -267,9 +257,10 @@
     .skeleton { background: linear-gradient(90deg, #f0f3fa 25%, #e4e9f4 50%, #f0f3fa 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: 6px; }
     @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
 
-    @media(max-width:768px) {
+        @media(max-width: 768px) {
       .apex-main { margin-left: 0; padding: 16px; }
       .apex-sidebar { transform: translateX(calc(-1 * var(--sidebar-w))); }
+      .apex-sidebar.open { transform: translateX(0); }
       .detail-grid { grid-template-columns: 1fr; }
     }
   </style>
