@@ -509,3 +509,34 @@ function formatDate(ts) {
   if (!ts) return '—';
   return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+// =============================================
+// Mobile sidebar toggle
+// =============================================
+const adminSidebar   = document.getElementById('apexSidebar') 
+                    || document.querySelector('.apex-sidebar');
+const adminOverlay   = document.getElementById('sidebarOverlay');
+const adminToggleBtn = document.getElementById('sidebarToggle');
+
+if (adminToggleBtn) {
+  adminToggleBtn.addEventListener('click', () => {
+    adminSidebar.classList.toggle('open');
+    adminOverlay.classList.toggle('show');
+  });
+}
+
+if (adminOverlay) {
+  adminOverlay.addEventListener('click', () => {
+    adminSidebar.classList.remove('open');
+    adminOverlay.classList.remove('show');
+  });
+}
+
+// Close sidebar when a nav link is clicked on mobile
+document.querySelectorAll('#adminNav a').forEach(link => {
+  link.addEventListener('click', () => {
+    if (window.innerWidth < 769) {
+      adminSidebar.classList.remove('open');
+      adminOverlay.classList.remove('show');
+    }
+  });
+});
