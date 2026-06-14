@@ -866,26 +866,26 @@
     <div class="form-panel">
       <form id="paymentForm">
         <div class="row g-3">
-          <div class="col-md-6">
-            <label class="form-label">Bank Name</label>
-            <input type="text" class="form-control" placeholder="e.g. Citibank" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Account Holder Name</label>
-            <input type="text" class="form-control" placeholder="Full name on account" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Account Number / IBAN</label>
-            <input type="text" class="form-control" placeholder="Enter account or IBAN number" required>
-          </div>
-          <div class="col-md-6">
-            <label class="form-label">Routing Number / SWIFT Code</label>
-            <input type="text" class="form-control" placeholder="e.g. CITIUS33">
-          </div>
-          <div class="col-12">
-            <label class="form-label">SSN / National ID / TIN <span style="font-weight:400;color:#a0aec0;">(for tax purposes)</span></label>
-            <input type="text" class="form-control" placeholder="Enter your SSN or Tax ID" required>
-          </div>
+        <div class="col-md-6">
+        <label class="form-label">Bank Name</label>
+        <input type="text" name="bank_name" class="form-control" placeholder="e.g. Citibank" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Account Holder Name</label>
+        <input type="text" name="account_holder" class="form-control" placeholder="Full name on account" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Account Number / IBAN</label>
+        <input type="text" name="account_number" class="form-control" placeholder="Enter account or IBAN number" required>
+      </div>
+      <div class="col-md-6">
+        <label class="form-label">Routing Number / SWIFT Code</label>
+        <input type="text" name="routing_swift" class="form-control" placeholder="e.g. CITIUS33">
+      </div>
+      <div class="col-12">
+        <label class="form-label">SSN / National ID / TIN ...</label>
+        <input type="text" name="ssn_tin" class="form-control" placeholder="Enter your SSN or Tax ID" required>
+      </div>
           <div class="col-12">
             <label class="form-label">Upload Utility Bill <span style="font-weight:400;color:#a0aec0;">(Proof of Address)</span></label>
             <input type="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png">
