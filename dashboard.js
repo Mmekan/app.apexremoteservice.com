@@ -391,6 +391,17 @@ async function loadRecentActivity() {
 // Add notification
 // =============================================
 async function addNotification(title, description, type = 'info') {
+  // Check if this exact notification already exists (unread) to avoid duplicates
+  const { data: existing } = await supabaseClient
+    .from('notifications')
+    .select('id')
+    .eq('user_id', currentSession.user.id)
+    .eq('title', title)
+    .eq('read', false)
+    .limit(1);
+
+  if (existing && existing.length > 0) return; // already there, skip
+
   await supabaseClient.from('notifications').insert({
     user_id: currentSession.user.id,
     title,
@@ -609,6 +620,12 @@ document.addEventListener('DOMContentLoaded', () => {
       btn.disabled    = false;
       return;
     }
+    // Clear old rejection notifications on resubmit
+    await supabaseClient
+      .from('notifications')
+      .delete()
+      .eq('user_id', currentSession.user.id)
+      .eq('title', 'Application Not Accepted');
 
     await addNotification(
       'Application submitted',
