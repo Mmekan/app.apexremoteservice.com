@@ -143,18 +143,16 @@ async function refreshDashboard() {
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     const allDone = profileDone && identityDone && paymentDone;
-    const alreadyLocked = ['in_review', 'approved'].includes(app.application_status);
+    const alreadyLocked = inReview || approved;
 
     submitBtn.disabled = !allDone || alreadyLocked;
     submitBtn.textContent = 
+      inReview ? 'Application Submitted — Under Review' :
       approved ? '✓ Application Approved' :
-      inReview ? 'Application Submitted' :
       rejected ? 'Resubmit Application' :
-      allDone ? 'Submit Application' : 'Complete all sections to unlock';
-
+      allDone  ? 'Submit Application' : 'Complete all sections to unlock';
     submitBtn.style.opacity = alreadyLocked ? '0.6' : '1';
-    submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';
-  }
+    submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';  }
 
   // Lock / Unlock logic
   if (approved || inReview) {
@@ -352,7 +350,7 @@ async function loadRecentActivity() {
   events.push({ dot: 'blue', title: 'Account created and email verified', time: 'On signup' });
 
   if (app.profile_complete)  events.push({ dot: 'teal',   title: 'Profile information saved',        time: 'Profile section' });
-  if (app.identity_complete) events.push({ dot: 'teal',   title: 'Identity documents submitted',     time: 'Identity section' });
+  if (app.identity_complete) events.push({ dot: 'teal',   title: 'Documentation submitted',     time: 'Documentation section' });
   if (app.payment_complete)  events.push({ dot: 'teal',   title: 'Payment method added',             time: 'Payment section' });
 
   if (app.opportunity_selected) events.push({
@@ -432,7 +430,17 @@ function prefillProfileForm(profile, email) {
   set('languages',   profile.additional_languages);
   set('experience',  profile.experience);
   set('equipment',   profile.available_equipment);
-  set('phone',       profile.phone_number);
+  // Split area code from phone number
+if (profile.phone_number) {
+  const areaCodes = ['+1', '+44', '+49'];
+  const matched = areaCodes.find(code => profile.phone_number.startsWith(code));
+  if (matched) {
+    set('areacode', matched);
+    set('phone', profile.phone_number.replace(matched, ''));
+  } else {
+    set('phone', profile.phone_number);
+  }
+}
 
   if (profile.country) {
     document.getElementById('country')?.dispatchEvent(new Event('change'));
@@ -448,6 +456,34 @@ document.addEventListener('DOMContentLoaded', () => {
     e.preventDefault();
     const f   = e.target;
     const btn = f.querySelector('button[type="submit"]');
+
+    // ── Required field check ──
+    const requiredFields = [
+      { name: 'full_name', label: 'Full Name' },
+      { name: 'email',     label: 'Email Address' },
+      { name: 'phone',     label: 'Phone Number' },
+      { name: 'country',   label: 'Country' },
+      { name: 'state',     label: 'State / Region' },
+      { name: 'address',   label: 'Full Address' },
+      { name: 'equipment', label: 'Available Equipment' },
+    ];
+
+    const missing = requiredFields.filter(field => !f.elements[field.name]?.value?.trim());
+
+    if (missing.length > 0) {
+      const labels = missing.map(f => f.label).join(', ');
+      alert(`Please fill in the following required fields:\n\n${labels}`);
+      // Highlight the missing fields in red
+      missing.forEach(field => {
+        const el = f.elements[field.name];
+        if (el) {
+          el.style.borderColor = '#ef4444';
+          el.addEventListener('input', () => el.style.borderColor = '', { once: true });
+        }
+      });
+      return; // Stop — don't save anything
+    }
+
     btn.textContent = 'Saving…';
     btn.disabled    = true;
 
@@ -534,7 +570,7 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    await addNotification('Identity submitted', 'Your identity documents have been submitted for review.', 'info');
+    await addNotification('Documentation submitted', 'Your documents have been submitted for review.', 'info');
     await refreshDashboard();
     await loadRecentActivity();
 
@@ -595,48 +631,64 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Opportunity submit
-  document.getElementById('opportunityForm')?.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const selected = e.target.elements['opportunity'].value;
-    if (!selected) { alert('Please select an opportunity.'); return; }
-
-    const btn = document.getElementById('submitApplicationBtn');
-    btn.textContent = 'Submitting…';
-    btn.disabled    = true;
-
-    const { error } = await supabaseClient
-      .from('applications')
-      .update({
-        selected_opportunity: selected,
-        opportunity_selected: true,
-        application_status:   'in_review',
-        updated_at:           new Date().toISOString()
-      })
-      .eq('user_id', currentSession.user.id);
-
-    if (error) {
-      alert('Submission error: ' + error.message);
-      btn.textContent = 'Submit Application';
-      btn.disabled    = false;
-      return;
-    }
-    // Clear old rejection notifications on resubmit
-    await supabaseClient
-      .from('notifications')
-      .delete()
-      .eq('user_id', currentSession.user.id)
-      .eq('title', 'Application Not Accepted');
-
-    await addNotification(
-      'Application submitted',
-      "Your application is now under review. We'll notify you by email of the outcome.",
-      'info'
-    );
-
-    lockFormsAfterSubmission();
-    await refreshDashboard();
-    await loadRecentActivity();
+// ── Select All toggle ──
+document.getElementById('selectAllOpportunities')?.addEventListener('change', function () {
+  document.querySelectorAll('.opportunity-check').forEach(cb => {
+    cb.checked = this.checked;
   });
+});
+
+// Keep "Select All" in sync if individual boxes are unchecked
+document.querySelectorAll('.opportunity-check').forEach(cb => {
+  cb.addEventListener('change', () => {
+    const all  = document.querySelectorAll('.opportunity-check');
+    const checked = document.querySelectorAll('.opportunity-check:checked');
+    document.getElementById('selectAllOpportunities').checked = all.length === checked.length;
+  });
+});
+
+document.getElementById('opportunityForm')?.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const checked = [...document.querySelectorAll('.opportunity-check:checked')];
+  if (checked.length === 0) {
+    alert('Please select at least one opportunity.');
+    return;
+  }
+
+  const selected = checked.map(cb => cb.value).join(', ');
+
+  const btn = document.getElementById('submitApplicationBtn');
+  btn.textContent = 'Submitting…';
+  btn.disabled    = true;
+
+  const { error } = await supabaseClient
+    .from('applications')
+    .update({
+      selected_opportunity: selected,
+      opportunity_selected: true,
+      application_status:   'in_review',
+      updated_at:           new Date().toISOString()
+    })
+    .eq('user_id', currentSession.user.id);
+
+  if (error) {
+    alert('Submission error: ' + error.message);
+    btn.textContent = 'Submit Application';
+    btn.disabled    = false;
+    return;
+  }
+
+  await addNotification(
+    'Application submitted',
+    "Your application is now under review. We'll notify you by email of the outcome.",
+    'info'
+  );
+
+  lockFormsAfterSubmission();
+  await refreshDashboard();
+  await loadRecentActivity();
+});
 });
 
 // =============================================

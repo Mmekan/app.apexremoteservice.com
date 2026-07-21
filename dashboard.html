@@ -528,21 +528,21 @@
       </a>
     </li>
     <li>
+      <a href="#" data-view="opportunities">
+        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
+        Job Selection
+      </a>
+    </li>
+    <li>
       <a href="#" data-view="identity">
         <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1.5"/><path d="M11 14h6M11 16h4"/></svg>
-        Identity Verification
+        Documentation
       </a>
     </li>
     <li>
       <a href="#" data-view="payment">
         <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/><circle cx="7" cy="15" r="1.5"/><path d="M13 15h4"/></svg>
         Payment Method
-      </a>
-    </li>
-    <li>
-      <a href="#" data-view="opportunities">
-        <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h10M7 12h10M7 16h6"/></svg>
-        Opportunities
       </a>
     </li>
   </ul>
@@ -575,8 +575,8 @@
   </div>
 
   <div class="ov-card teal" onclick="navigateTo('identity')" style="cursor:pointer;"
-    title="Go to Identity Verification">
-    <div class="ov-card-label">Verification</div>
+    title="Go to Documentation">
+    <div class="ov-card-label">Documentation</div>
     <div class="ov-card-value" id="ovVerifValue">—</div>
     <div class="ov-card-sub" id="ovVerifSub">Loading…</div>
     <div class="ov-card-icon">
@@ -600,7 +600,7 @@
 
   <div class="ov-card purple" onclick="navigateTo('opportunities')" style="cursor:pointer;"
     title="Go to Opportunities">
-    <div class="ov-card-label">Application</div>
+    <div class="ov-card-label">Job Selection</div>
     <div class="ov-card-value" id="ovStatusValue">—</div>
     <div class="ov-card-sub" id="ovStatusSub">Loading…</div>
     <div class="ov-card-icon">
@@ -744,7 +744,7 @@
             <textarea name="experience" class="form-control" rows="3" placeholder="Do you have any prior experience with remote work?"></textarea>
           </div>
           <div class="col-md-6">
-            <label class="form-label">Available Equipment</label>
+            <label class="form-label">Available Devices</label>
             <select name="equipment" class="form-select" required>
               <option value="" selected disabled>Select Equipment</option>
               <option value="Laptop">Laptop</option>
@@ -784,7 +784,7 @@
 
   <!-- IDENTITY -->
   <div class="view" id="view-identity">
-    <div class="section-title">Identity Verification</div>
+    <div class="section-title">Documentation</div>
     <div class="section-sub">Submit your government-issued documents to verify your identity.</div>
     <div class="form-panel">
       <div class="step-pills">
@@ -900,52 +900,64 @@
 
   <!-- OPPORTUNITIES -->
   <div class="view" id="view-opportunities">
-    <div class="section-title">Available Opportunities</div>
+    <div class="section-title">Job Selection</div>
     <div class="section-sub">Select ONE opportunity to complete your application.</div>
     <div class="form-panel">
       <form id="opportunityForm">
+        <!-- Select All -->
+        <div class="mb-3 p-3 rounded border" style="background:rgba(19,99,198,.04);border-color:rgba(19,99,198,.2) !important;">
+          <label class="form-check d-flex align-items-center gap-2 mb-0" style="cursor:pointer;">
+            <input class="form-check-input" type="checkbox" id="selectAllOpportunities" style="width:18px;height:18px;">
+            <div>
+              <strong style="color:var(--primary);">Select All Opportunities</strong>
+              <div class="text-muted small">Apply for all available positions at once</div>
+            </div>
+          </label>
+        </div>
+
         <div class="mb-3">
-          <label class="form-check w-100 p-3 rounded border">
-            <input class="form-check-input" type="radio" name="opportunity" value="Hedgehog by Handshake">
+          <label class="form-check w-100 p-3 rounded border" style="cursor:pointer;">
+            <input class="form-check-input opportunity-check" type="checkbox" value="Hedgehog by Handshake">
             <strong>Hedgehog by Handshake</strong>
             <div class="text-muted small">AI training & evaluation · $105/hr</div>
           </label>
         </div>
         <div class="mb-3">
-          <label class="form-check w-100 p-3 rounded border">
-            <input class="form-check-input" type="radio" name="opportunity" value="Okta by Welocalize">
+          <label class="form-check w-100 p-3 rounded border" style="cursor:pointer;">
+            <input class="form-check-input opportunity-check" type="checkbox" value="Okta by Welocalize">
             <strong>Okta by Welocalize</strong>
             <div class="text-muted small">Identity & auth testing · $50/hr</div>
           </label>
         </div>
         <div class="mb-3">
-          <label class="form-check w-100 p-3 rounded border">
-            <input class="form-check-input" type="radio" name="opportunity" value="Bot Automation by OneForma">
+          <label class="form-check w-100 p-3 rounded border" style="cursor:pointer;">
+            <input class="form-check-input opportunity-check" type="checkbox" value="Bot Automation by OneForma">
             <strong>Bot Automation by OneForma</strong>
             <div class="text-muted small">Bot training & QA · $55/hr</div>
           </label>
         </div>
         <div class="mb-3">
-          <label class="form-check w-100 p-3 rounded border">
-            <input class="form-check-input" type="radio" name="opportunity" value="Aether by Outlier">
+          <label class="form-check w-100 p-3 rounded border" style="cursor:pointer;">
+            <input class="form-check-input opportunity-check" type="checkbox" value="Aether by Outlier">
             <strong>Aether by Outlier</strong>
             <div class="text-muted small">Advanced AI feedback · $75/hr</div>
           </label>
         </div>
         <div class="mb-3">
-          <label class="form-check w-100 p-3 rounded border">
-            <input class="form-check-input" type="radio" name="opportunity" value="Content Search Reviewer by Telus">
+          <label class="form-check w-100 p-3 rounded border" style="cursor:pointer;">
+            <input class="form-check-input opportunity-check" type="checkbox" value="Content Search Reviewer by Telus">
             <strong>Content Search Reviewer by Telus</strong>
             <div class="text-muted small">Search quality rating · $70/hr</div>
           </label>
         </div>
         <div class="mb-4">
-          <label class="form-check w-100 p-3 rounded border">
-            <input class="form-check-input" type="radio" name="opportunity" value="Media Search Analyst by CrowdGen">
+          <label class="form-check w-100 p-3 rounded border" style="cursor:pointer;">
+            <input class="form-check-input opportunity-check" type="checkbox" value="Media Search Analyst by CrowdGen">
             <strong>Media Search Analyst by CrowdGen</strong>
             <div class="text-muted small">Media relevance analysis · $15–$35/hr</div>
           </label>
         </div>
+
         <button type="submit" class="btn-primary-apex w-100" id="submitApplicationBtn" disabled>Submit Application</button>
       </form>
     </div>

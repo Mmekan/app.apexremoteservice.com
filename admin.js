@@ -126,7 +126,7 @@ function renderRecentTable() {
     <tr onclick="openModal('${a.user_id}')">
       <td><strong>${fullName(a)}</strong></td>
       <td>${a.email || '—'}</td>
-      <td>${a.app.selected_opportunity || '—'}</td>
+      <td>${formatOpportunity(a.app.selected_opportunity)}</td>
       <td>${statusPill(a.app.application_status)}</td>
       <td>${formatDate(a.app.updated_at)}</td>
     </tr>`).join('');
@@ -151,7 +151,7 @@ function renderApplicantsTable(list) {
         <td><strong>${fullName(a)}</strong></td>
         <td>${a.country || '—'}</td>
         <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">
-          ${a.app.selected_opportunity || '—'}
+          ${formatOpportunity(a.app.selected_opportunity)}
         </td>
         <td>
           <div style="display:flex;align-items:center;gap:8px;">
@@ -509,6 +509,14 @@ function formatDate(ts) {
   if (!ts) return '—';
   return new Date(ts).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 }
+
+function formatOpportunity(val) {
+  if (!val) return '—';
+  const jobs = val.split(',').map(j => j.trim());
+  if (jobs.length === 1) return jobs[0];
+  if (jobs.length === 6) return 'All Opportunities';
+  return `${jobs.length} Opportunities`;
+}
 // =============================================
 // Mobile sidebar toggle
 // =============================================
@@ -540,3 +548,5 @@ document.querySelectorAll('#adminNav a').forEach(link => {
     }
   });
 });
+
+
