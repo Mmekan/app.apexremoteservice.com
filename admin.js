@@ -1,6 +1,4 @@
-// =============================================
-// Supabase
-// =============================================
+
 const { createClient } = window.supabase;
 const supabaseClient = createClient(
   'https://glwncvlpnchxcsngsuhe.supabase.co',
@@ -11,6 +9,43 @@ let allApplicants = [];
 let currentFilter = 'all';
 let activeApplicant = null;
 
+//
+
+function showToast(message, type = 'info') {
+  const colors = {
+    info:    'linear-gradient(135deg, #1363C6, #15ACE1)',
+    success: 'linear-gradient(135deg, #22c55e, #16a34a)',
+    warn:    'linear-gradient(135deg, #ef4444, #dc2626)'
+  };
+  const icons = {
+    info:    `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`,
+    success: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
+    warn:    `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+  };
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed; top: 80px; left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: ${colors[type] || colors.info};
+    color: #fff; padding: 14px 20px; border-radius: 14px;
+    font-family: 'Sora', sans-serif; font-size: 0.88rem; font-weight: 600;
+    box-shadow: 0 12px 32px rgba(0,0,0,.2); z-index: 9999;
+    display: flex; align-items: center; gap: 10px;
+    width: max-content; max-width: calc(100vw - 32px);
+    opacity: 0; transition: all 0.3s ease;
+  `;
+  toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
 // =============================================
 // Boot — verify admin
 // =============================================
@@ -352,7 +387,7 @@ async function approveApplicant() {
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
-    alert('Error: ' + error.message);
+    showToast('Error: ' + error.message, 'warn');
     btn.textContent = '✓ Approve';
     btn.disabled = false;
     return;
@@ -368,7 +403,7 @@ async function approveApplicant() {
   await sendNotificationEmail('approved', activeApplicant);
 
   closeModal();
-  showActionFeedback('✓ Application approved successfully!', '#22c55e');
+  showActionFeedback('✓ Application approved successfully!', 'success');
 }
 
 // =============================================
@@ -396,7 +431,7 @@ async function confirmReject() {
     .eq('user_id', activeApplicant.user_id);
 
   if (error) {
-    alert('Error: ' + error.message);
+    showToast('Error: ' + error.message, 'warn');
     btn.textContent = 'Confirm Rejection';
     btn.disabled = false;
     return;
@@ -416,28 +451,15 @@ async function confirmReject() {
 
   await sendNotificationEmail('rejected', activeApplicant);
 
-  btn.textContent = '✗ Rejected';
   closeModal();
-  showActionFeedback('Application rejected successfully.', '#ef4444');
+  showActionFeedback('Application rejected successfully.', 'warn');
 }
 // =============================================
 // Feedback banner then reload
 // =============================================
-function showActionFeedback(message, color) {
-  const banner = document.createElement('div');
-  banner.style.cssText = `
-    position:fixed; top:80px; left:50%; transform:translateX(-50%);
-    background:${color}; color:#fff; padding:16px 32px; border-radius:12px;
-    font-family:'Sora',sans-serif; font-size:1rem; font-weight:600;
-    box-shadow:0 10px 30px rgba(0,0,0,.25); z-index:9999;
-  `;
-  banner.textContent = message;
-  document.body.appendChild(banner);
-
-  setTimeout(() => {
-    banner.style.opacity = '0';
-    setTimeout(() => window.location.reload(), 600);
-  }, 1400);
+function showActionFeedback(message, type = 'success') {
+  showToast(message, type);
+  setTimeout(() => window.location.reload(), 2000);
 }
 
 // =============================================
