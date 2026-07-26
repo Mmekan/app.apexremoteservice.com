@@ -27,7 +27,7 @@ function showToast(message, type = 'info') {
     color: #fff;
     padding: 14px 20px;
     border-radius: 14px;
-    font-family: 'Sora', sans-serif;
+    font-family: 'Inter', sans-serif;
     font-size: 0.88rem;
     font-weight: 600;
     box-shadow: 0 12px 32px rgba(0,0,0,.2);

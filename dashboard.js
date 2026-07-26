@@ -272,7 +272,7 @@ function unlockFormsForResubmission() {
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
     submitBtn.disabled = false;
-    submitBtn.textContent = 'Submit Application';
+    submitBtn.textContent = 'Save & Continue';
     submitBtn.style.opacity = '1';
     submitBtn.style.cursor = 'pointer';
   }
