@@ -325,20 +325,22 @@ function showToast(message, type = 'info') {
     transform: translateX(-50%) translateY(-10px);
     background: ${colors[type] || colors.info};
     color: #fff;
-    padding: 14px 24px;
+    padding: 14px 20px;
     border-radius: 14px;
     font-family: 'Sora', sans-serif;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     font-weight: 600;
     box-shadow: 0 12px 32px rgba(0,0,0,.2);
     z-index: 9999;
     display: flex;
     align-items: center;
     gap: 10px;
-    max-width: 90vw;
+    width: max-content;
+    max-width: calc(100vw - 32px);
     opacity: 0;
     transition: all 0.3s ease;
   `;
+
   toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
   document.body.appendChild(toast);
 
@@ -708,7 +710,6 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
           btn.textContent = 'Save Payment Details';
           btn.disabled = false;
-          navigateTo('opportunities');
         }, 800);
       });
 
