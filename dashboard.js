@@ -140,19 +140,30 @@ document.getElementById('ovVerifSub').textContent = identityDone ? '✓ Document
   }
 
   // Submit button state
+  // Job selection save button
   const submitBtn = document.getElementById('submitApplicationBtn');
   if (submitBtn) {
+    const alreadyLocked = inReview || approved;
+    submitBtn.disabled = alreadyLocked;
+    submitBtn.textContent = alreadyLocked ? '✓ Saved' : 'Save & Continue';
+    submitBtn.style.opacity = alreadyLocked ? '0.6' : '1';
+    submitBtn.style.cursor = alreadyLocked ? 'not-allowed' : 'pointer';
+  }
+
+  // Final submit button on payment page
+  const finalBtn = document.getElementById('finalSubmitBtn');
+  if (finalBtn) {
     const allDone = profileDone && identityDone && paymentDone;
     const alreadyLocked = inReview || approved;
-
-    submitBtn.disabled = !allDone || alreadyLocked;
-    submitBtn.textContent = 
-      inReview ? 'Application Submitted — Under Review' :
+    finalBtn.disabled = !allDone || alreadyLocked;
+    finalBtn.textContent =
+      inReview ? '✓ Application Under Review' :
       approved ? '✓ Application Approved' :
       rejected ? 'Resubmit Application' :
-      allDone  ? 'Submit Application' : 'Complete all sections to unlock';
-    submitBtn.style.opacity = alreadyLocked ? '0.6' : '1';
-    submitBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';  }
+      allDone  ? 'Submit Application' : 'Complete all sections to submit';
+    finalBtn.style.opacity = alreadyLocked ? '0.6' : '1';
+    finalBtn.style.cursor  = alreadyLocked ? 'not-allowed' : 'pointer';
+  }
 
   // Lock / Unlock logic
   if (approved || inReview) {
@@ -230,6 +241,13 @@ function lockFormsAfterSubmission() {
 
   document.querySelectorAll('#opportunityForm input[type="checkbox"]')
     .forEach(r => r.disabled = true);
+
+  const finalBtn = document.getElementById('finalSubmitBtn');
+  if (finalBtn) {
+    finalBtn.disabled = true;
+    finalBtn.style.opacity = '0.6';
+    finalBtn.style.cursor = 'not-allowed';
+  }
 }
 // =============================================
 // Unlock forms when application is rejected
@@ -282,6 +300,62 @@ function timeAgo(ts) {
   if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
   return `${Math.floor(diff / 86400)}d ago`;
 }
+
+// =============================================
+// Toast notification
+// =============================================
+function showToast(message, type = 'info') {
+  const colors = {
+    info:    'linear-gradient(135deg, var(--primary), var(--secondary))',
+    success: 'linear-gradient(135deg, #22c55e, #16a34a)',
+    warn:    'linear-gradient(135deg, #ef4444, #dc2626)'
+  };
+
+  const icons = {
+    info:    `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`,
+    success: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
+    warn:    `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+  };
+
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: ${colors[type] || colors.info};
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-family: 'Sora', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 12px 32px rgba(0,0,0,.2);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 90vw;
+    opacity: 0;
+    transition: all 0.3s ease;
+  `;
+  toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+  document.body.appendChild(toast);
+
+  // Animate in
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+
+  // Animate out and remove
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
 // =============================================
 // Load notifications
 // =============================================
@@ -472,7 +546,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (missing.length > 0) {
       const labels = missing.map(f => f.label).join(', ');
-      alert(`Please fill in the following required fields:\n\n${labels}`);
+      showToast(`Please fill in the following required fields: ${labels}`, 'warn');
       // Highlight the missing fields in red
       missing.forEach(field => {
         const el = f.elements[field.name];
@@ -522,7 +596,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .eq('user_id', currentSession.user.id);
 
     if (error) {
-      alert('Error saving profile: ' + error.message);
+      showToast('Error saving profile: ' + error.message, 'warn');
       btn.textContent = 'Save Profile';
       btn.disabled    = false;
       return;
@@ -567,7 +641,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .eq('user_id', currentSession.user.id);
 
     if (error) {
-      alert('Error: ' + error.message);
+      showToast('Error: ' + error.message, 'warn');
       btn.textContent = 'Submit for Verification';
       btn.disabled = false;
       return;
@@ -607,7 +681,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }, { onConflict: 'user_id' });
 
     if (payError) {
-      alert('Error saving payment info: ' + payError.message);
+      showToast('Error saving payment info: ' + payError.message, 'warn');
       btn.textContent = 'Save Payment Details';
       btn.disabled    = false;
       return;
@@ -620,7 +694,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .eq('user_id', currentSession.user.id);
 
     if (appError) {
-      alert('Error: ' + appError.message);
+      showToast('Error: ' + appError.message, 'warn');
       btn.textContent = 'Save Payment Details';
       btn.disabled    = false;
       return;
@@ -639,10 +713,10 @@ document.addEventListener('DOMContentLoaded', () => {
       });
 
   // Opportunity submit
-// ── Select All toggle ──
-document.getElementById('selectAllOpportunities')?.addEventListener('change', function () {
-  document.querySelectorAll('.opportunity-check').forEach(cb => {
-    cb.checked = this.checked;
+  // ── Select All toggle ──
+  document.getElementById('selectAllOpportunities')?.addEventListener('change', function () {
+    document.querySelectorAll('.opportunity-check').forEach(cb => {
+      cb.checked = this.checked;
   });
 });
 
@@ -660,14 +734,14 @@ document.getElementById('opportunityForm')?.addEventListener('submit', async (e)
 
   const checked = [...document.querySelectorAll('.opportunity-check:checked')];
   if (checked.length === 0) {
-    alert('Please select at least one opportunity.');
+    showToast('Please select at least one opportunity.', 'warn');
     return;
   }
 
   const selected = checked.map(cb => cb.value).join(', ');
 
   const btn = document.getElementById('submitApplicationBtn');
-  btn.textContent = 'Submitting…';
+  btn.textContent = 'Saving…';
   btn.disabled    = true;
 
   const { error } = await supabaseClient
@@ -675,24 +749,55 @@ document.getElementById('opportunityForm')?.addEventListener('submit', async (e)
     .update({
       selected_opportunity: selected,
       opportunity_selected: true,
-      application_status:   'in_review',
       updated_at:           new Date().toISOString()
     })
     .eq('user_id', currentSession.user.id);
 
   if (error) {
-    alert('Submission error: ' + error.message);
-    btn.textContent = 'Submit Application';
+    showToast('Error saving selection: ' + error.message, 'warn');
+    btn.textContent = 'Save & Continue';
     btn.disabled    = false;
     return;
   }
 
+  await refreshDashboard();
+  await loadRecentActivity();
+
+  btn.textContent = '✓ Saved!';
+  setTimeout(() => {
+    btn.textContent = 'Save & Continue';
+    btn.disabled = false;
+    navigateTo('identity');
+  }, 800);
+});
+
+// Final submit button
+document.getElementById('finalSubmitBtn')?.addEventListener('click', async () => {
+  const btn = document.getElementById('finalSubmitBtn');
+  btn.textContent = 'Submitting…';
+  btn.disabled = true;
+
+  const { error } = await supabaseClient
+    .from('applications')
+    .update({
+      application_status: 'in_review',
+      updated_at: new Date().toISOString()
+    })
+    .eq('user_id', currentSession.user.id);
+
+  if (error) {
+    showToast('Submission error: ' + error.message, 'warn');
+    btn.textContent = 'Submit Application';
+    btn.disabled = false;
+    return;
+  }
+
   // Clear old rejection notifications on resubmit
-await supabaseClient
-  .from('notifications')
-  .delete()
-  .eq('user_id', currentSession.user.id)
-  .eq('title', 'Application Not Accepted');
+  await supabaseClient
+    .from('notifications')
+    .delete()
+    .eq('user_id', currentSession.user.id)
+    .eq('title', 'Application Not Accepted');
 
   await addNotification(
     'Application submitted',
@@ -703,6 +808,7 @@ await supabaseClient
   lockFormsAfterSubmission();
   await refreshDashboard();
   await loadRecentActivity();
+  navigateTo('home');
 });
 });
 

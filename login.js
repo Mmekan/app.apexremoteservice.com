@@ -4,6 +4,57 @@ const supabaseClient = createClient(
   'sb_publishable_D84XYOx5qE_iGSbKk0WE5g_KJf-qb1J'
 );
 
+function showToast(message, type = 'info') {
+  const colors = {
+    info:    'linear-gradient(135deg, #1363C6, #15ACE1)',
+    success: 'linear-gradient(135deg, #22c55e, #16a34a)',
+    warn:    'linear-gradient(135deg, #ef4444, #dc2626)'
+  };
+
+  const icons = {
+    info:    `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>`,
+    success: `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>`,
+    warn:    `<svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>`
+  };
+
+  const toast = document.createElement('div');
+  toast.style.cssText = `
+    position: fixed;
+    top: 32px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-10px);
+    background: ${colors[type] || colors.info};
+    color: #fff;
+    padding: 14px 24px;
+    border-radius: 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    box-shadow: 0 12px 32px rgba(0,0,0,.2);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    max-width: 90vw;
+    text-align: center;
+    opacity: 0;
+    transition: all 0.3s ease;
+  `;
+  toast.innerHTML = `${icons[type] || icons.info}<span>${message}</span>`;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => {
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateX(-50%) translateY(0)';
+  });
+
+  setTimeout(() => {
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateX(-50%) translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}
+
 // =============================================
 // Handle auth redirects from email links
 // =============================================
@@ -136,7 +187,7 @@ async function handleSubmit(e) {
 
       if (error) throw error;
 
-      alert('Signup successful! Please check your email to confirm your account.');
+      showToast('Signup successful! Please check your email to confirm your account.', 'success');
       switchTab('login');
       return;
     }
@@ -153,7 +204,7 @@ async function handleSubmit(e) {
 
   } catch (err) {
     console.error(err);
-    alert(err.message || 'An error occurred. Please try again.');
+    showToast(err.message || 'An error occurred. Please try again.', 'warn');
   } finally {
     btn.disabled = false;
     btnText.style.display = 'inline';
@@ -167,7 +218,7 @@ async function handleSubmit(e) {
 async function forgotPassword() {
   const email = document.getElementById('email').value.trim();
   if (!email) {
-    alert('Please enter your email address first.');
+    showToast('Please enter your email address first.', 'warn');
     return;
   }
 
@@ -176,8 +227,8 @@ async function forgotPassword() {
   });
 
   if (error) {
-    alert(error.message);
+    showToast(error.message, 'warn');
   } else {
-    alert('Password reset link has been sent to your email.');
+    showToast('Password reset link has been sent to your email.', 'success');
   }
 }
