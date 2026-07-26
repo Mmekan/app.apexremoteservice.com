@@ -121,7 +121,7 @@ async function refreshDashboard() {
     `${stepsComplete} of ${stepsTotal} sections done`;
 
   document.getElementById('ovVerifValue').textContent   = identityDone ? 'Verified' : 'Pending';
-  document.getElementById('ovVerifSub').textContent     = identityDone ? '✓ Identity confirmed' : 'Submit your ID docs';
+document.getElementById('ovVerifSub').textContent = identityDone ? '✓ Documents confirmed' : 'Submit your documents';
   document.getElementById('ovPaymentValue').textContent = paymentDone  ? 'Added' : 'Not Set';
   document.getElementById('ovPaymentSub').textContent   = paymentDone  ? '✓ Payment method saved' : 'Add a payment method';
 
@@ -228,7 +228,7 @@ function lockFormsAfterSubmission() {
   lock(document.getElementById('submitIdentityBtn'));
   lock(document.querySelector('#paymentForm button[type="submit"]'));
 
-  document.querySelectorAll('#opportunityForm input[type="radio"]')
+  document.querySelectorAll('#opportunityForm input[type="checkbox"]')
     .forEach(r => r.disabled = true);
 }
 // =============================================
@@ -248,7 +248,7 @@ function unlockFormsForResubmission() {
   unlock(document.getElementById('submitIdentityBtn'));
   unlock(document.querySelector('#paymentForm button[type="submit"]'));
 
-  document.querySelectorAll('#opportunityForm input[type="radio"]')
+  document.querySelectorAll('#opportunityForm input[type="checkbox"]')
     .forEach(r => r.disabled = false);
 
   const submitBtn = document.getElementById('submitApplicationBtn');
@@ -599,12 +599,11 @@ document.addEventListener('DOMContentLoaded', () => {
       .from('payment_info')
       .upsert({
         user_id:         currentSession.user.id,
-        bank_name:       f.elements[0].value,        // Bank Name
-        account_holder:  f.elements[1].value,        // Account Holder
-        account_number:  f.elements[2].value,        // Account Number/IBAN
-        routing_swift:   f.elements[3].value,        // Routing/SWIFT
-        ssn_tin:         f.elements[4].value,        // SSN/TIN
-        updated_at:      new Date().toISOString()
+        bank_name:       f.elements['bank_name'].value,
+        account_holder:  f.elements['account_holder'].value,
+        account_number:  f.elements['account_number'].value,
+        routing_swift:   f.elements['routing_swift'].value,
+        ssn_tin:         f.elements['ssn_tin'].value,        updated_at:      new Date().toISOString()
       }, { onConflict: 'user_id' });
 
     if (payError) {
@@ -687,6 +686,13 @@ document.getElementById('opportunityForm')?.addEventListener('submit', async (e)
     btn.disabled    = false;
     return;
   }
+
+  // Clear old rejection notifications on resubmit
+await supabaseClient
+  .from('notifications')
+  .delete()
+  .eq('user_id', currentSession.user.id)
+  .eq('title', 'Application Not Accepted');
 
   await addNotification(
     'Application submitted',

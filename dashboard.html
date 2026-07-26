@@ -575,6 +575,19 @@
     </div>
   </div>
 
+  <div class="ov-card purple" onclick="navigateTo('opportunities')" style="cursor:pointer;"
+    title="Go to Job Selection">
+    <div class="ov-card-label">Job Selection</div>
+    <div class="ov-card-value" id="ovStatusValue">—</div>
+    <div class="ov-card-sub" id="ovStatusSub">Loading…</div>
+    <div class="ov-card-icon">
+      <svg width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="1.8" viewBox="0 0 24 24">
+        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+      </svg>
+    </div>
+  </div>
+
   <div class="ov-card teal" onclick="navigateTo('identity')" style="cursor:pointer;"
     title="Go to Documentation">
     <div class="ov-card-label">Documentation</div>
@@ -595,19 +608,6 @@
     <div class="ov-card-icon">
       <svg width="22" height="22" fill="none" stroke="#f97316" stroke-width="1.8" viewBox="0 0 24 24">
         <rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>
-      </svg>
-    </div>
-  </div>
-
-  <div class="ov-card purple" onclick="navigateTo('opportunities')" style="cursor:pointer;"
-    title="Go to Opportunities">
-    <div class="ov-card-label">Job Selection</div>
-    <div class="ov-card-value" id="ovStatusValue">—</div>
-    <div class="ov-card-sub" id="ovStatusSub">Loading…</div>
-    <div class="ov-card-icon">
-      <svg width="22" height="22" fill="none" stroke="#8b5cf6" stroke-width="1.8" viewBox="0 0 24 24">
-        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
-        <polyline points="14,2 14,8 20,8"/>
       </svg>
     </div>
   </div>
@@ -655,8 +655,9 @@
     </li>
   </ul>
 </div>
-    </div>
-    </div>
+  </div><!-- closes home-grid -->
+</div><!-- closes view-home -->
+    
 
   <!-- PROFILE -->
   <div class="view" id="view-profile">
@@ -900,7 +901,7 @@
   <!-- OPPORTUNITIES -->
   <div class="view" id="view-opportunities">
     <div class="section-title">Job Selection</div>
-    <div class="section-sub">Select the oppurtunities you wish to apply for.</div>
+    <div class="section-sub">Select the opportunities you wish to apply for.</div>
     <div class="form-panel">
       <form id="opportunityForm">
         <!-- Select All -->
