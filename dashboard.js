@@ -538,9 +538,12 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadRecentActivity();
 
     btn.textContent = '✓ Saved!';
-    setTimeout(() => { btn.textContent = 'Save Profile'; btn.disabled = false; }, 2000);
-  });
-
+        setTimeout(() => {
+          btn.textContent = 'Save Profile';
+          btn.disabled = false;
+          navigateTo('opportunities');
+        }, 800);
+      });
     // Identity submit
   document.getElementById('submitIdentityBtn')?.addEventListener('click', async () => {
     const btn = document.getElementById('submitIdentityBtn');
@@ -575,9 +578,10 @@ document.addEventListener('DOMContentLoaded', () => {
     await loadRecentActivity();
 
     btn.textContent = '✓ Submitted';
-    btn.disabled = false;
-  });
-  
+        btn.disabled = false;
+        setTimeout(() => navigateTo('payment'), 800);
+      });  
+
   // Payment submit
  document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -626,9 +630,14 @@ document.addEventListener('DOMContentLoaded', () => {
     await addNotification('Payment method saved', 'Your payment details have been recorded.', 'success');
     await refreshDashboard();
     await loadRecentActivity();
+    
     btn.textContent = '✓ Saved!';
-    setTimeout(() => { btn.textContent = 'Save Payment Details'; btn.disabled = false; }, 2000);
-  });
+        setTimeout(() => {
+          btn.textContent = 'Save Payment Details';
+          btn.disabled = false;
+          navigateTo('opportunities');
+        }, 800);
+      });
 
   // Opportunity submit
 // ── Select All toggle ──
