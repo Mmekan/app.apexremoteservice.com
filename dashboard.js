@@ -996,5 +996,5 @@ async function logout() {
     .forEach(k => localStorage.removeItem(k));
   window.location.replace('login.html');
 }
-
+});
 document.getElementById('logoutBtn')?.addEventListener('click', logout);
