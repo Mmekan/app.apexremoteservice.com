@@ -311,7 +311,14 @@
       font-weight: 600;
     }
 
-    .activity-list { list-style: none; display: flex; flex-direction: column; gap: 2px; }
+    .activity-list { 
+      list-style: none; 
+      display: flex; 
+      flex-direction: column; 
+      gap: 2px; 
+      padding: 0;          /* ← same fix */
+      margin: 0;
+    }
     .activity-item {
       display: flex;
       align-items: center;
@@ -336,6 +343,8 @@
   flex-direction: column; 
   gap: 8px;
   width: 100%;
+  padding: 0;          /* ← remove Bootstrap’s left padding */
+  margin: 0;
 }
 
 .notif-item {
@@ -346,6 +355,8 @@
   transition: background var(--transition);
   align-items: flex-start;
   height: auto;
+  width: 100%;         /* optional, keeps full width */
+  margin: 0;
 }
 
 .notif-item:hover { 
