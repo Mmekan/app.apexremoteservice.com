@@ -534,14 +534,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const btn = f.querySelector('button[type="submit"]');
 
     // ── Required field check ──
-    const requiredFields = [
-      { name: 'full_name', label: 'Full Name' },
-      { name: 'email',     label: 'Email Address' },
-      { name: 'phone',     label: 'Phone Number' },
-      { name: 'country',   label: 'Country' },
-      { name: 'state',     label: 'State / Region' },
-      { name: 'address',   label: 'Full Address' },
-      { name: 'equipment', label: 'Available Equipment' },
+const requiredFields = [
+      { name: 'full_name',  label: 'Full Name' },
+      { name: 'email',      label: 'Email Address' },
+      { name: 'areacode',   label: 'Phone Area Code' },
+      { name: 'phone',      label: 'Phone Number' },
+      { name: 'country',    label: 'Country' },
+      { name: 'state',      label: 'State / Region' },
+      { name: 'address',    label: 'Full Address' },
+      { name: 'zip',        label: 'Zip Code' },
+      { name: 'city',       label: 'City' },
+      { name: 'dob',        label: 'Date of Birth' },
+      { name: 'gender',     label: 'Gender' },
+      { name: 'education',  label: 'Education Level' },
+      { name: 'employment', label: 'Employment Status' },
+      { name: 'equipment',  label: 'Available Equipment' },
     ];
 
     const missing = requiredFields.filter(field => !f.elements[field.name]?.value?.trim());
@@ -623,17 +630,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // Identity submit
   document.getElementById('submitIdentityBtn')?.addEventListener('click', async () => {
     const btn = document.getElementById('submitIdentityBtn');
-    btn.textContent = 'Uploading…';
-    btn.disabled = true;
 
-    // Upload identity documents
+    // ── Required file check ──
     const frontFile  = document.getElementById('idFront')?.files?.[0];
     const backFile   = document.getElementById('idBack')?.files?.[0];
     const selfieFile = document.getElementById('idSelfie')?.files?.[0];
 
-    if (frontFile)  await uploadFile(frontFile,  'identity');
-    if (backFile)   await uploadFile(backFile,   'identity');
-    if (selfieFile) await uploadFile(selfieFile, 'selfie');
+    const missingFiles = [];
+    if (!frontFile)  missingFiles.push('Front of Document');
+    if (!backFile)   missingFiles.push('Back of Document');
+    if (!selfieFile) missingFiles.push('Selfie with Document');
+
+    if (missingFiles.length > 0) {
+      showToast('Please upload: ' + missingFiles.join(', '), 'warn');
+      return;
+    }
+
+    btn.textContent = 'Uploading…';
+    btn.disabled = true;
+
+    await uploadFile(frontFile,  'identity');
+    await uploadFile(backFile,   'identity');
+    await uploadFile(selfieFile, 'selfie');
 
     btn.textContent = 'Submitting…';
 
@@ -659,13 +677,36 @@ document.addEventListener('DOMContentLoaded', () => {
       });  
 
   // Payment submit
- document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
+document.getElementById('paymentForm')?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const f   = e.target;
     const btn = f.querySelector('button[type="submit"]');
+
+    // ── Required field check ──
+    const paymentRequired = [
+      { name: 'bank_name',      label: 'Bank Name' },
+      { name: 'account_holder', label: 'Account Holder Name' },
+      { name: 'account_number', label: 'Account Number / IBAN' },
+      { name: 'ssn_tin',        label: 'SSN / National ID / TIN' },
+    ];
+
+    const missingPayment = paymentRequired.filter(field => !f.elements[field.name]?.value?.trim());
+
+    if (missingPayment.length > 0) {
+      showToast('Please fill in: ' + missingPayment.map(f => f.label).join(', '), 'warn');
+      missingPayment.forEach(field => {
+        const el = f.elements[field.name];
+        if (el) {
+          el.style.borderColor = '#ef4444';
+          el.addEventListener('input', () => el.style.borderColor = '', { once: true });
+        }
+      });
+      return;
+    }
+
     btn.textContent = 'Saving…';
     btn.disabled    = true;
-
+    
     // Upload utility bill if provided
     const utilityFile = f.querySelector('input[type="file"]')?.files?.[0];
     if (utilityFile) await uploadFile(utilityFile, 'utility');
@@ -773,7 +814,50 @@ document.getElementById('opportunityForm')?.addEventListener('submit', async (e)
 });
 
 // Final submit button
-document.getElementById('finalSubmitBtn')?.addEventListener('click', async () => {
+document.getElementById('finalSubmitBtn')?.addEventListener('click', () => {
+  showConsentModal();
+});
+
+// =============================================
+// Consent modal
+// =============================================
+function showConsentModal() {
+  const overlay = document.getElementById('consentOverlay');
+  const checkbox = document.getElementById('consentCheckbox');
+  const agreeBtn = document.getElementById('consentAgreeBtn');
+
+  // Reset state every time it opens
+  checkbox.checked = false;
+  agreeBtn.style.opacity = '0.4';
+  agreeBtn.style.pointerEvents = 'none';
+
+  // Enable agree button only when checkbox is ticked
+  checkbox.onchange = () => {
+    if (checkbox.checked) {
+      agreeBtn.style.opacity = '1';
+      agreeBtn.style.pointerEvents = 'auto';
+    } else {
+      agreeBtn.style.opacity = '0.4';
+      agreeBtn.style.pointerEvents = 'none';
+    }
+  };
+
+  overlay.style.display = 'flex';
+}
+
+function consentCancel() {
+  document.getElementById('consentOverlay').style.display = 'none';
+  // Re-enable the submit button so they can try again
+  const btn = document.getElementById('finalSubmitBtn');
+  if (btn) {
+    btn.textContent = 'Submit Application';
+    btn.disabled = false;
+  }
+}
+
+async function consentAgree() {
+  document.getElementById('consentOverlay').style.display = 'none';
+
   const btn = document.getElementById('finalSubmitBtn');
   btn.textContent = 'Submitting…';
   btn.disabled = true;
@@ -809,9 +893,9 @@ document.getElementById('finalSubmitBtn')?.addEventListener('click', async () =>
   lockFormsAfterSubmission();
   await refreshDashboard();
   await loadRecentActivity();
-  navigateTo('home');
-});
-});
+  showToast('Application submitted successfully!', 'success');
+  setTimeout(() => navigateTo('home'), 1500);
+}
 
 // =============================================
 // Card navigation
@@ -866,7 +950,30 @@ document.querySelectorAll('#sidebarNav a').forEach(link => {
 });
 
 // =============================================
-// Identity sub-steps
+// Identity Step 1 validation
+// =============================================
+function idStep1Continue() {
+  const docType    = document.getElementById('docType')?.value;
+  const docNumber  = document.querySelector('#idStep1 input[type="text"]')?.value?.trim();
+  const issueDate  = document.querySelectorAll('#idStep1 input[type="date"]')[0]?.value;
+  const expiryDate = document.querySelectorAll('#idStep1 input[type="date"]')[1]?.value;
+
+  const missing = [];
+  if (!docType)    missing.push('Document Type');
+  if (!docNumber)  missing.push('Document Number');
+  if (!issueDate)  missing.push('Issue Date');
+  if (!expiryDate) missing.push('Expiry Date');
+
+  if (missing.length > 0) {
+    showToast('Please fill in: ' + missing.join(', '), 'warn');
+    return;
+  }
+
+  idGoTo(2);
+}
+
+// =============================================
+// Identity sub-steps S2
 // =============================================
 function idGoTo(step) {
   [1, 2, 3].forEach(i => {
