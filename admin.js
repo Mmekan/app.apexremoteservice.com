@@ -342,32 +342,6 @@ function toggleRejectReason() {
   el.style.display = el.style.display === 'block' ? 'none' : 'block';
 }
 
-// =============================================
-// Email notification
-// =============================================
-async function sendNotificationEmail(type, applicant) {
-  try {
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    await fetch(
-      'https://glwncvlpnchxcsngsuhe.supabase.co/functions/v1/notify-applicant',
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.access_token}`
-        },
-        body: JSON.stringify({
-          type,
-          email:        applicant.email,
-          firstName:    applicant.first_name || 'Applicant',
-          dashboardUrl: 'https://app.apexremoteservices.com/dashboard.html'
-        })
-      }
-    );
-  } catch (err) {
-    console.error('Email send failed:', err);
-  }
-}
 
 // =============================================
 // Approve + Reject Applicants
@@ -400,7 +374,7 @@ async function approveApplicant() {
     type: 'success'
   });
 
-  await sendNotificationEmail('approved', activeApplicant);
+
 
   closeModal();
   showActionFeedback('✓ Application approved successfully!', 'success');
@@ -449,7 +423,6 @@ async function confirmReject() {
     type: 'warn'
   });
 
-  await sendNotificationEmail('rejected', activeApplicant);
 
   closeModal();
   showActionFeedback('Application rejected successfully.', 'warn');
