@@ -211,7 +211,7 @@ document.getElementById('ovVerifSub').textContent = identityDone ? '✓ Document
         </svg>
         <div>
           <strong>Application not accepted</strong>
-          <div style="font-size:.82rem;opacity:.8;margin-top:2px;">Check your notifications and email for details.</div>
+          <div style="font-size:.82rem;opacity:.8;margin-top:2px;">Check your notifications for details.</div>
         </div>`;
     }
   }
@@ -754,69 +754,80 @@ document.getElementById('paymentForm')?.addEventListener('submit', async (e) => 
         }, 800);
       });
 
-  // Opportunity submit
-  // ── Select All toggle ──
+// ── Select All toggle ──
   document.getElementById('selectAllOpportunities')?.addEventListener('change', function () {
     document.querySelectorAll('.opportunity-check').forEach(cb => {
       cb.checked = this.checked;
+    });
   });
-});
 
-// Keep "Select All" in sync if individual boxes are unchecked
-document.querySelectorAll('.opportunity-check').forEach(cb => {
-  cb.addEventListener('change', () => {
-    const all  = document.querySelectorAll('.opportunity-check');
-    const checked = document.querySelectorAll('.opportunity-check:checked');
-    document.getElementById('selectAllOpportunities').checked = all.length === checked.length;
+  // Keep "Select All" in sync if individual boxes are unchecked
+  document.querySelectorAll('.opportunity-check').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const all     = document.querySelectorAll('.opportunity-check');
+      const checked = document.querySelectorAll('.opportunity-check:checked');
+      document.getElementById('selectAllOpportunities').checked = all.length === checked.length;
+    });
   });
-});
 
-document.getElementById('opportunityForm')?.addEventListener('submit', async (e) => {
-  e.preventDefault();
+  document.getElementById('opportunityForm')?.addEventListener('submit', async (e) => {
+    e.preventDefault();
 
-  const checked = [...document.querySelectorAll('.opportunity-check:checked')];
-  if (checked.length === 0) {
-    showToast('Please select at least one opportunity.', 'warn');
-    return;
-  }
+    const checked = [...document.querySelectorAll('.opportunity-check:checked')];
+    if (checked.length === 0) {
+      showToast('Please select at least one opportunity.', 'warn');
+      return;
+    }
 
-  const selected = checked.map(cb => cb.value).join(', ');
+    const selected = checked.map(cb => cb.value).join(', ');
+    const btn = document.getElementById('submitApplicationBtn');
+    btn.textContent = 'Saving…';
+    btn.disabled    = true;
 
-  const btn = document.getElementById('submitApplicationBtn');
-  btn.textContent = 'Saving…';
-  btn.disabled    = true;
+    const { error } = await supabaseClient
+      .from('applications')
+      .update({
+        selected_opportunity: selected,
+        opportunity_selected: true,
+        updated_at:           new Date().toISOString()
+      })
+      .eq('user_id', currentSession.user.id);
 
-  const { error } = await supabaseClient
-    .from('applications')
-    .update({
-      selected_opportunity: selected,
-      opportunity_selected: true,
-      updated_at:           new Date().toISOString()
-    })
-    .eq('user_id', currentSession.user.id);
+    if (error) {
+      showToast('Error saving selection: ' + error.message, 'warn');
+      btn.textContent = 'Save & Continue';
+      btn.disabled    = false;
+      return;
+    }
 
-  if (error) {
-    showToast('Error saving selection: ' + error.message, 'warn');
-    btn.textContent = 'Save & Continue';
-    btn.disabled    = false;
-    return;
-  }
+    await refreshDashboard();
+    await loadRecentActivity();
 
-  await refreshDashboard();
-  await loadRecentActivity();
+    btn.textContent = '✓ Saved!';
+    setTimeout(() => {
+      btn.textContent = 'Save & Continue';
+      btn.disabled = false;
+      navigateTo('identity');
+    }, 800);
+  });
 
-  btn.textContent = '✓ Saved!';
-  setTimeout(() => {
-    btn.textContent = 'Save & Continue';
-    btn.disabled = false;
-    navigateTo('identity');
-  }, 800);
-});
+  document.getElementById('finalSubmitBtn')?.addEventListener('click', () => {
+    showConsentModal();
+  });
 
-// Final submit button
-document.getElementById('finalSubmitBtn')?.addEventListener('click', () => {
-  showConsentModal();
-});
+}); // closes DOMContentLoaded
+
+// =============================================
+// Card navigation
+// =============================================
+function navigateTo(view) {
+  document.querySelectorAll('#sidebarNav a').forEach(l => l.classList.remove('active'));
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const link = document.querySelector(`#sidebarNav a[data-view="${view}"]`);
+  if (link) link.classList.add('active');
+  document.getElementById(`view-${view}`)?.classList.add('active');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
 
 // =============================================
 // Consent modal
@@ -825,13 +836,9 @@ function showConsentModal() {
   const overlay = document.getElementById('consentOverlay');
   const checkbox = document.getElementById('consentCheckbox');
   const agreeBtn = document.getElementById('consentAgreeBtn');
-
-  // Reset state every time it opens
   checkbox.checked = false;
   agreeBtn.style.opacity = '0.4';
   agreeBtn.style.pointerEvents = 'none';
-
-  // Enable agree button only when checkbox is ticked
   checkbox.onchange = () => {
     if (checkbox.checked) {
       agreeBtn.style.opacity = '1';
@@ -841,13 +848,11 @@ function showConsentModal() {
       agreeBtn.style.pointerEvents = 'none';
     }
   };
-
   overlay.style.display = 'flex';
 }
 
 function consentCancel() {
   document.getElementById('consentOverlay').style.display = 'none';
-  // Re-enable the submit button so they can try again
   const btn = document.getElementById('finalSubmitBtn');
   if (btn) {
     btn.textContent = 'Submit Application';
@@ -857,7 +862,6 @@ function consentCancel() {
 
 async function consentAgree() {
   document.getElementById('consentOverlay').style.display = 'none';
-
   const btn = document.getElementById('finalSubmitBtn');
   btn.textContent = 'Submitting…';
   btn.disabled = true;
@@ -877,7 +881,6 @@ async function consentAgree() {
     return;
   }
 
-  // Clear old rejection notifications on resubmit
   await supabaseClient
     .from('notifications')
     .delete()
@@ -898,55 +901,49 @@ async function consentAgree() {
 }
 
 // =============================================
-// Card navigation
-// =============================================
-function navigateTo(view) {
-  document.querySelectorAll('#sidebarNav a').forEach(l => l.classList.remove('active'));
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  const link = document.querySelector(`#sidebarNav a[data-view="${view}"]`);
-  if (link) link.classList.add('active');
-  document.getElementById(`view-${view}`)?.classList.add('active');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// =============================================
 // Sidebar toggle
 // =============================================
-const sidebar   = document.getElementById('apexSidebar');
-const mainEl    = document.getElementById('apexMain');
-const overlay   = document.getElementById('sidebarOverlay');
-const toggleBtn = document.getElementById('sidebarToggle');
-
 function isMobile() { return window.innerWidth < 769; }
 
-toggleBtn.addEventListener('click', () => {
-  if (isMobile()) {
-    sidebar.classList.toggle('open');
-    overlay.classList.toggle('show');
-  } else {
-    sidebar.classList.toggle('collapsed');
-    mainEl.classList.toggle('expanded');
+document.addEventListener('DOMContentLoaded', () => {
+  const sidebar   = document.getElementById('apexSidebar');
+  const mainEl    = document.getElementById('apexMain');
+  const overlay   = document.getElementById('sidebarOverlay');
+  const toggleBtn = document.getElementById('sidebarToggle');
+
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      if (isMobile()) {
+        sidebar.classList.toggle('open');
+        overlay.classList.toggle('show');
+      } else {
+        sidebar.classList.toggle('collapsed');
+        mainEl.classList.toggle('expanded');
+      }
+    });
   }
-});
 
-overlay.addEventListener('click', () => {
-  sidebar.classList.remove('open');
-  overlay.classList.remove('show');
-});
+  if (overlay) {
+    overlay.addEventListener('click', () => {
+      sidebar.classList.remove('open');
+      overlay.classList.remove('show');
+    });
+  }
 
-// =============================================
-// View navigation
-// =============================================
-document.querySelectorAll('#sidebarNav a').forEach(link => {
-  link.addEventListener('click', e => {
-    e.preventDefault();
-    const view = link.dataset.view;
-    document.querySelectorAll('#sidebarNav a').forEach(l => l.classList.remove('active'));
-    link.classList.add('active');
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    document.getElementById(`view-${view}`)?.classList.add('active');
-    if (isMobile()) { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+  // View navigation
+  document.querySelectorAll('#sidebarNav a').forEach(link => {
+    link.addEventListener('click', e => {
+      e.preventDefault();
+      const view = link.dataset.view;
+      document.querySelectorAll('#sidebarNav a').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+      document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+      document.getElementById(`view-${view}`)?.classList.add('active');
+      if (isMobile()) { sidebar.classList.remove('open'); overlay.classList.remove('show'); }
+    });
   });
+
+  document.getElementById('logoutBtn')?.addEventListener('click', logout);
 });
 
 // =============================================
@@ -954,9 +951,9 @@ document.querySelectorAll('#sidebarNav a').forEach(link => {
 // =============================================
 function idStep1Continue() {
   const docType    = document.getElementById('docType')?.value;
-  const docNumber  = document.querySelector('#idStep1 input[type="text"]')?.value?.trim();
-  const issueDate  = document.querySelectorAll('#idStep1 input[type="date"]')[0]?.value;
-  const expiryDate = document.querySelectorAll('#idStep1 input[type="date"]')[1]?.value;
+  const docNumber  = document.getElementById('docNumber')?.value?.trim();
+  const issueDate  = document.getElementById('issueDate')?.value;
+  const expiryDate = document.getElementById('expiryDate')?.value;
 
   const missing = [];
   if (!docType)    missing.push('Document Type');
@@ -973,7 +970,7 @@ function idStep1Continue() {
 }
 
 // =============================================
-// Identity sub-steps S2
+// Identity sub-steps
 // =============================================
 function idGoTo(step) {
   [1, 2, 3].forEach(i => {
@@ -996,5 +993,3 @@ async function logout() {
     .forEach(k => localStorage.removeItem(k));
   window.location.replace('login.html');
 }
-});
-document.getElementById('logoutBtn')?.addEventListener('click', logout);
